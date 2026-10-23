@@ -1,0 +1,29 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+
+# Runtime/data and local artifacts
+data/
+volumes/
+logs/
+*.log
+*.sqlite
+*.db
+*.pdf
+*.docx
+*.xlsx
+*.csv
+*.png
+*.jpg
+*.jpeg
+*.zip
+__pycache__/
+.venv/
+.DS_Store
