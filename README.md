@@ -1,66 +1,57 @@
 # Nexus Search AI
 
-**Busca inteligente de documentos locais, com OCR, IA e referências às fontes.**
+**Busca inteligente de documentos locais, com IA, recuperação de fontes e OCR planejado.**
 
-Projeto de laboratório para disponibilizar pesquisa de documentos por navegador, utilizando uma implantação independente do [Onyx](https://github.com/onyx-dot-app/onyx) (edição Standard). O objetivo é extrair e indexar conteúdo de arquivos previamente autorizados, permitir buscas por palavras-chave e significado, e futuramente responder perguntas com citações dos arquivos de origem.
+Laboratório independente baseado em [Onyx Standard](https://github.com/onyx-dot-app/onyx), executado em Docker Desktop + Ubuntu WSL2, com modelos locais servidos pelo Ollama.
 
-> **Estado: implantação em andamento.** O Docker foi validado; o download das imagens Onyx Standard v4.9.4 foi iniciado. **Ainda não foi confirmada a inicialização da interface nem a indexação de documentos.**
+> **Status em 23/10/2026: prova de conceito de busca documental funcional.** O agente consultou dois documentos sintéticos, recuperou informações corretas e apresentou os nomes dos arquivos-fonte. O desempenho ainda é instável; OCR, integração com compartilhamentos de rede e acesso multiusuário **não estão homologados**.
 
-## Arquitetura inicial
+## Arquitetura resumida
 
 ```text
-Documentos autorizados (somente leitura)
-          |
-          v
-Extração de texto -> OCR opcional
-          |
-          v
-    Índice Onyx Standard
-          |
-          v
- Interface Web + busca + respostas citadas
+Arquivos aprovados -> Conector de ingestão -> Índice Onyx Standard
+                                                |
+Navegador -> Agente Nexus -> Busca interna/RAG -> Ollama local
+                                                |
+                                     Resposta com fonte
 ```
 
-A primeira execução usa **documentos sintéticos** e acesso local. Fontes de rede, autenticação de equipes e permissões por documento exigem homologação independente. Nenhum arquivo original deve ser alterado ou enviado a provedores externos sem uma decisão explícita sobre fluxo de dados.
+A aplicação roda em um computador de processamento **separado** do servidor de arquivos. O servidor de origem não requer instalação de Onyx e não deve ser alterado. A ingestão futura da rede precisa ser validada **somente leitura**.
 
-## Status do laboratório
+## Marcos validados
 
-| Item | Estado |
-| --- | --- |
-| Ubuntu no WSL2 | Validado |
-| Docker Desktop e integração WSL | Validado |
-| Docker Compose | Validado |
-| Onyx Standard v4.9.4 | Download iniciado; execução ainda não verificada |
-| Interface pelo navegador | Pendente |
-| Primeiro conjunto de documentos indexados | Pendente |
-| OCR | Planejado |
-| IA local | Planejada, sujeita a benchmark de recursos |
+- [x] Ubuntu no WSL2 e Docker Desktop integrados
+- [x] Onyx Standard v4.9.4 inicializado e interface disponível no navegador
+- [x] Ollama local, com `qwen3:1.7b`, `gemma3:1b` e `qwen3.5:4b` baixados
+- [x] Conexão **OpenAI-Compatible** do Onyx ao Ollama validada com Qwen3 1.7B
+- [x] Agente **Nexus — Pesquisa Documental** criado e testado em português
+- [x] Conector de arquivos com dois documentos **sintéticos** indexados
+- [x] Respostas corretas com referência aos arquivos de teste
+- [ ] Otimizar busca e chamadas auxiliares de IA (timeout de até vários minutos observado)
+- [ ] OCR de PDFs digitalizados e imagens
+- [ ] Ingestão somente leitura de um compartilhamento de rede
+- [ ] Controle de acesso validado para usuários diferentes
+- [ ] Configuração durável e monitoramento operacional
 
 ## Documentação
 
-- [Arquitetura e fronteiras de segurança](docs/architecture.md)
+- [Arquitetura](docs/architecture.md)
 - [Instalação e diário técnico](docs/installation.md)
-- [Plano de entregas](docs/roadmap.md)
+- [Integração Onyx + Ollama e incidentes](docs/onyx-ollama-troubleshooting.md)
+- [Piloto documental e resultados](docs/pilot-results.md)
+- [Plano de evolução](docs/roadmap.md)
 - [Segurança e privacidade](docs/security.md)
-- [Configuração de exemplo](config/.env.example)
 
-## Escopo e princípios
+## Limites e princípios
 
-- Buscar arquivos por conteúdo e, quando viável, por semântica.
-- Exibir referência e origem dos documentos utilizados nas respostas.
-- Priorizar extração nativa de PDFs antes de recorrer a OCR.
-- Usar fontes explicitamente autorizadas e preferencialmente montadas somente para leitura.
-- Evitar serviços externos para dados confidenciais; validar o caminho de informações antes de ligar modelos e conectores.
-- Preservar rastreabilidade, reversibilidade e não alteração dos originais.
+- **Busca com fonte:** resposta correta sem nova recuperação não comprova pesquisa.
+- **Desempenho:** distinguir tempo de thinking, tempo da busca e latência total.
+- **Privacidade:** processar dados aprovados localmente, sem publicar conteúdo ou logs reais.
+- **Acesso:** não presumir que um índice compartilhado respeita automaticamente ACLs SMB/NTFS.
+- **Manutenção:** alterações dentro de contêineres são temporárias e podem sumir ao recriá-los.
 
-## Desenvolvimento e instalação
+Este repositório documenta implantação, testes e decisões: **não é um fork do Onyx**. Consulte a [documentação oficial](https://docs.onyx.app/deployment/overview) para instruções atualizadas e licenças aplicáveis.
 
-Este repositório **não é um fork do Onyx** nem reproduz seu código. Para uma primeira implantação consulte a [documentação oficial](https://docs.onyx.app/deployment/overview) e [nosso diário de instalação](docs/installation.md). Versões e requisitos devem ser conferidos antes de executar scripts em ambientes novos.
+## Publicação
 
-## Publicação e contribuições
-
-A documentação não deve incluir endereços de rede privados, caminhos reais de compartilhamentos, nomes de pessoas, documentos, credenciais nem logs confidenciais. Antes de tornar este repositório público, revise todo o histórico de commits, issues e anexos.
-
-## Créditos
-
-Baseado no software independente [Onyx](https://github.com/onyx-dot-app/onyx), sujeito às licenças e condições aplicáveis do projeto original.
+O projeto permanece privado durante o laboratório. Antes de publicá-lo, auditar histórico de commits, documentação, issues e anexos para evitar credenciais, identificadores, caminhos internos ou arquivos de terceiros.
