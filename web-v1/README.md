@@ -17,3 +17,5 @@ Abrir no Windows copia o caminho para colar no Explorador. Navegadores normalmen
 Sem resultados: confirme que a raiz existe no índice usando o mesmo caminho local ou UNC. Everything indisponível: verifique http://127.0.0.1:8888/?search=teste&json=1 no host. Exige JSON sem redirecionamento; o Nexus não envia Basic Auth upstream. Não amplie permissões para contornar erros de escopo.
 
 Inventários, checkpoints e Onyx existentes não são alterados. Não publique .env, data/, contas, certificados, caminhos reais ou arquivos do acervo.
+
+Para configurar HTTPS com o nome nexus, consulte HTTPS-LAN.md e execute npm.cmd run setup:https -- --name nexus no host já configurado. O assistente não instala confiança nem abre firewall automaticamente.

@@ -13,3 +13,5 @@ data/
 *.crt
 
 .nexus-test-*/
+
+*.cer

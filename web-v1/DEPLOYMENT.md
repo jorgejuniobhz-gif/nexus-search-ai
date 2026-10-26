@@ -1,3 +1,5 @@
+Para usar a autoridade privada gerada localmente pelo assistente, siga HTTPS-LAN.md. A alternativa abaixo usa certificado fornecido por sua infraestrutura.
+
 # Execução local e LAN
 
 ## Padrão preservado

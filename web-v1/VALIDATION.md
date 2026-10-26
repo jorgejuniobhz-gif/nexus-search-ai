@@ -1,6 +1,6 @@
 # Validação — Web 1.1
 
-15 verificações: **14 aprovadas, nenhuma falha e 1 subteste de junction ignorado** porque o ambiente atual não permite criar a fixture (EPERM). A leitura de arquivo sintético, rejeição de diretório/arquivo ausente e contenção de caminhos passaram. O bloqueio de junctions continua implementado e havia passado na entrega inicial; repetir em um Windows que permita a fixture.
+17 verificações: **16 aprovadas, nenhuma falha e 1 subteste de junction ignorado** porque o ambiente atual não permite criar a fixture (EPERM). A leitura de arquivo sintético, rejeição de diretório/arquivo ausente e contenção de caminhos passaram. O bloqueio de junctions continua implementado e havia passado na entrega inicial; repetir em um Windows que permita a fixture.
 
 ## Cobertura automatizada
 
@@ -31,3 +31,7 @@ O pacote de atualização não inclui .env, data/, contas, certificados/chaves, 
 ## Troca da própria senha
 
 Testadas senha atual incorreta, confirmação divergente, senha curta, troca de conta comum sem afetar admin, encerramento de todas as sessões, troca administrativa persistente, recusa da credencial antiga e preservação do hash administrativo ao editar outras contas. Nenhuma senha real foi usada. A tela de troca foi conferida no navegador sem alterar credenciais reais.
+
+## Assistente HTTPS
+
+Testada conexão TLS real com validação normal: cliente sem a autoridade local é recusado; cliente com a autoridade e nome corretos é aceito. Testadas assinatura, nome incorreto, preservação de .env/contas/downloads, backup, tratamento de chaves duplicadas e reutilização sem regenerar certificados válidos. Proteção NTFS via icacls, importação no repositório de certificados do Windows, firewall e confiança nos navegadores da equipe exigem homologação no host; o teste de arquivos usa um protetor de diretório simulado. Nenhuma chave ou certificado gerado foi incluído na entrega.
