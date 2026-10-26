@@ -17,15 +17,15 @@ Execute no **Windows que roda o Everything**, com a conta Windows que tem acesso
 3. Abra PowerShell nesta pasta e execute:
 
    ```powershell
-   npm run setup
+   npm.cmd run setup
    ```
 
    Informe uma raiz explicitamente aprovada para esse administrador. Opcionalmente informe o UNC correspondente, para que um caminho de disco local seja convertido corretamente para compartilhamento. Não suponha que uma unidade mapeada representa o mesmo caminho em outro PC. A ferramenta gera uma senha aleatória, exibe-a uma vez e cria `.env` sem sobrescrever configuração existente. Guarde a senha em local seguro.
 4. Execute:
 
    ```powershell
-   npm test
-   npm start
+   npm.cmd test
+   npm.cmd start
    ```
 
 5. Acesse **http://127.0.0.1:3000** no mesmo computador e entre com a senha gerada. O endereço usa `127.0.0.1`, não `localhost`, para validar Host e origem. Pesquise primeiro um arquivo de teste não confidencial cuja presença já é conhecida.
@@ -48,8 +48,9 @@ Edite `.env` localmente e reinicie para aplicar mudanças. Use aspas simples ext
 ## Recursos e limites
 
 - Busca literal em nomes e caminhos com debounce de 350 ms, cancelamento de requisições antigas, filtros por categoria, extensão e arquivo/pasta, páginas de 25/50/100 e contagem do Everything dentro do escopo.
-- A extensão digitada prevalece sobre a categoria. Não oferece sintaxe avançada Everything; aspas e controles são recusados para impedir injeção de expressão. `foo bar` é uma sequência literal. Pastas são navegadas por subárvore, não apenas filhos imediatos.
-- Migalhas derivadas do caminho permitem pesquisar dentro das pastas. O botão “Todas as raízes” volta ao escopo inicial. O backend impede navegar para fora das raízes.
+- A extensão digitada prevalece sobre a categoria. Não oferece sintaxe avançada Everything; aspas e controles são recusados para impedir injeção de expressão. `foo bar` é uma sequência literal. Sem texto de pesquisa, selecionar uma pasta mostra apenas seu conteúdo direto. Ao digitar um termo, a pesquisa inclui as subpastas da pasta selecionada.
+- Árvore lateral com raízes aprovadas, expansão/recolhimento por nível, carregamento sob demanda de até 100 subpastas por página e botão para carregar mais. Não carrega o servidor inteiro. Raízes e subpastas exigem autenticação e validação de escopo no backend. Use “Atualizar” para recarregar a árvore após mudanças no índice.
+- Migalhas derivadas do caminho permitem pesquisar dentro das pastas. O botão “Todas as pastas permitidas” volta ao escopo inicial. “Limpar filtros” mantém a pasta selecionada. O backend impede navegar para fora das raízes.
 - Copiar UNC exige caminho UNC original ou mapeamento explícito. “Abrir no Windows” copia o caminho para colar no Explorador: navegadores normalmente bloqueiam abrir programas e arquivos locais. Nenhum executável é iniciado pelo servidor. O Windows verifica o acesso ao abrir pelo Explorador.
 - Download usa arquivos locais/SMB pelo backend, jamais o endpoint de download Everything. Exige sessão, ID aleatório de resultado emitido para essa sessão, raiz aprovada, leitura possível pela conta Windows do processo, arquivo regular e recusa de links simbólicos/junctions. A checagem é repetida ao baixar. Nomes não autorizados ou caminhos arbitrários não podem ser requisitados diretamente.
 - As raízes e seus diretórios ancestrais precisam ser administrados por pessoas confiáveis. Não há defesa contra um administrador local malicioso ou substituições de diretórios concorrentes por quem controla o filesystem. Não use essa implementação como autorização multiusuário ou isolamento contra usuários locais hostis.
@@ -74,4 +75,8 @@ Ambas as portas devem estar em `127.0.0.1`. De outro PC, `Test-NetConnection <ho
 
 “Resposta fora do escopo”: o backend descartou a página inteira, inclusive a contagem. Confirme caminho/raiz e compatibilidade do Everything, sem alargar o escopo para resolver o erro. “Download sem acesso”: confirme leitura na conta que executa Node e ausência de junctions/symlinks. UNC ausente: configure o mapeamento real apenas no `.env` local.
 
-Testes: `npm test` usa API simulada e arquivos sintéticos, sem indexar nem ler dados do usuário. Testa configuração restritiva, injeção, travessia, sessão, origem, escopo, falha upstream, download e rechecagem. A homologação Windows/Everything/ACL continua necessária antes do uso com dados reais.
+Testes: `npm.cmd test` usa API simulada e arquivos sintéticos, sem indexar nem ler dados do usuário. Testa configuração restritiva, injeção, travessia, sessão, origem, escopo, falha upstream, download e rechecagem. A homologação Windows/Everything/ACL continua necessária antes do uso com dados reais.
+
+## Atualização com árvore de pastas
+
+Consulte `ATUALIZAR.md`. Não execute o configurador novamente em uma instalação existente: o `.env` local preserva a senha, as raízes e a opção de download. A atualização não habilita acesso multiusuário ou LAN.

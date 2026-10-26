@@ -19,3 +19,12 @@ O isolamento inicial impediu conexões HTTP dos testes (`EACCES`); os testes for
 Everything não respondeu em `127.0.0.1:8888` no ambiente da entrega. Compatibilidade com a instância real 1.4.1, contagens, permissões NTFS/SMB, mapeamentos UNC, firewall e abertura pelo Explorador precisam da homologação documentada no README. Não há validação de identidades AD ou de grupos, portanto acesso da equipe pela LAN permanece bloqueado.
 
 Não foram alterados inventário, checkpoints, Onyx, configurações do Everything, firewall ou serviços existentes. Nenhum arquivo do acervo foi utilizado nos testes.
+
+
+## Atualização: árvore de pastas
+
+Nesta atualização, a suíte totalizou 10 verificações: 9 aprovadas, nenhuma falha e 1 subteste de junction ignorado porque o ambiente atual não permite criar junctions (EPERM). A leitura real de arquivos sintéticos, a recusa de pastas/arquivos ausentes e a contenção fora da raiz passaram. O teste de junction havia passado na entrega inicial; deve ser repetido em um Windows que permita criar a fixture. O bloqueio de junctions em produção permanece implementado.
+
+Os novos testes confirmam regex de filhos imediatos para caminhos Windows e UNC; raízes e árvore autenticadas; paginação de 100 pastas; rejeição de consultas fora da raiz; rejeição de resultados do nível errado e de arquivos retornados na árvore. Queries de pesquisa e downloads anteriores continuam cobertas.
+
+Conferência no navegador com API simulada: expansão por nível, segunda página de pastas, seleção, conteúdo direto, pesquisa recursiva, pasta sem subpastas, migalhas e manutenção da pasta ao limpar filtros. Layout verificado em larguras de 1280 e 390 pixels, sem rolagem horizontal. Sem acesso ao acervo real ou ao Everything do host de operação. O pacote de atualização não contém `.env` nem dados do usuário.

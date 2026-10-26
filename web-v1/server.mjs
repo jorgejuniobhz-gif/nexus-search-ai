@@ -32,9 +32,12 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile}={}) {
     if(!session)fail(401,'Entre como administrador local.');
     if(route==='/api/logout'&&req.method==='POST'){sessions.delete(token);res.setHeader('Set-Cookie','nexus=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0');return json(res,200,{ok:true});}
     if(route==='/api/session'&&req.method==='GET')return json(res,200,{mode:'admin-local',downloads:cfg.downloads,expires:session.expires});
-    if(route==='/api/search'&&req.method==='GET') {
+    if(route==='/api/roots'&&req.method==='GET')return json(res,200,{roots:cfg.roots.map(r=>({path:r.path,name:path.win32.basename(r.path)||r.path}))});
+    if((route==='/api/search'||route==='/api/folders')&&req.method==='GET') {
      if(inFlight>=3)fail(429,'Há pesquisas em andamento. Tente novamente.');
-     const query=searchQuery(url.searchParams,cfg);let data;
+     const params=new URLSearchParams(url.searchParams);
+     if(route==='/api/folders') {params.set('type','folder');params.set('q','');params.set('ext','');params.set('count','100');params.set('view','children');}
+     const query=searchQuery(params,cfg);let data;
      inFlight++; try {const response=await fetcher(query.url,{signal:AbortSignal.timeout(8000),redirect:'error'});if(!response.ok)throw Error();
       const chunks=[];let bytes=0;for await(const c of response.body){bytes+=c.length;if(bytes>2*1024*1024)throw Error();chunks.push(c);} data=JSON.parse(Buffer.concat(chunks).toString());
      }catch{fail(502,'Everything indisponível ou resposta inválida. Verifique o serviço local na porta 8888.');}finally{inFlight--;}
@@ -42,6 +45,7 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile}={}) {
      const items=data.results.map(row=>normalizeResult(row,cfg));
      // Fail closed: never send an upstream total when the returned page violates scope.
      if(items.some(x=>!x))fail(502,'Resposta fora do escopo aprovado.');
+     if(items.some(x=>(query.folder&&!inside(query.folder,x.fullPath))||(query.view==='children'&&path.win32.normalize(x.path).replace(/\\$/,'').toLowerCase()!==path.win32.normalize(query.folder).replace(/\\$/,'').toLowerCase())||(route==='/api/folders'&&x.type!=='folder')))fail(502,'Resposta fora da pasta selecionada.');
      if(session.items.size>1000)session.items.clear();
      for(const item of items){item.id=randomBytes(18).toString('hex');session.items.set(item.id,item);}
      return json(res,200,{items,total:data.totalResults,offset:query.offset,count:query.count});

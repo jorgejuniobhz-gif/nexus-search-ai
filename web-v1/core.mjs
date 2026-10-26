@@ -26,12 +26,14 @@ export function searchQuery(params,cfg) {
  const q=(params.get('q')||'').trim(), folder=params.get('folder')||'', type=params.get('type')||'all', ext=params.get('ext')||'';
  if(q.length>200||q.includes('"')||/[\x00-\x1f]/.test(q)||!['all','file','folder'].includes(type)||!/^([a-z0-9]{1,16}(;[a-z0-9]{1,16})*)?$/i.test(ext)) fail(400,'Filtro inválido. Use texto simples, sem aspas.');
  if(folder&&(!safePath(folder)||!cfg.roots.some(r=>inside(r.path,folder)))) fail(403,'Pasta fora do escopo.');
+ const view=params.get('view')||'subtree';
+ if(!['subtree','children'].includes(view)||(view==='children'&&!folder)) fail(400,'Escopo de navegação inválido.');
  const offset=Number(params.get('offset')||0), count=Number(params.get('count')||25);
  if(!Number.isSafeInteger(offset)||offset<0||offset>1000000||![25,50,100].includes(count)) fail(400,'Paginação inválida.');
  const scopes=(folder?[{path:folder}]:cfg.roots).map(r=>reEscape(r.path.replace(/\\$/,''))+'\\\\');
- const query=[`regex:"^(?:${scopes.join('|')})"`,...(q?[`regex:"${reEscape(q)}"`]:[]),...(type==='all'?[]:[type==='folder'?'folder:':'file:']),...(ext?[`ext:${ext}`]:[])].join(' ');
+ const query=[`regex:"^(?:${scopes.join('|')})${view==='children'?'[^\\\\]+$':''}"`,...(q?[`regex:"${reEscape(q)}"`]:[]),...(type==='all'?[]:[type==='folder'?'folder:':'file:']),...(ext?[`ext:${ext}`]:[])].join(' ');
  const url=new URL(cfg.upstream); for(const [k,v] of Object.entries({search:query,json:1,path:1,path_column:1,size_column:1,offset,count,sort:'name',ascending:1})) url.searchParams.set(k,v);
- return {url,offset,count,q,folder};
+ return {url,offset,count,q,folder,view};
 }
 export function normalizeResult(row,cfg) {
  if(!row||!['file','folder'].includes(row.type)||typeof row.name!=='string'||/[\\/]/.test(row.name)||!row.name||row.name==='.'||row.name==='..'||!safePath(row.path)) return null;

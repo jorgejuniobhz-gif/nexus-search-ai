@@ -54,7 +54,7 @@ test('download streaming succeeds only from a server-held result and rechecks ac
  const origin=`http://127.0.0.1:${cfg.port}`;const login=await fetch(origin+'/api/login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({password})});const headers={Cookie:login.headers.get('set-cookie').split(';')[0]};
  const result=await(await fetch(origin+'/api/search',{headers})).json();const response=await fetch(origin+'/api/download?id='+result.items[0].id,{headers});assert.equal(await response.text(),'synthetic bytes');assert.equal(checks,1);assert.match(response.headers.get('content-disposition'),/%C3%A1/);
 });
-test('real Windows file access accepts a regular file, denies directories, missing files and junctions',{skip:process.platform!=='win32'},async()=>{
+test('real Windows file access accepts a regular file and denies directories, missing files and out-of-root paths',{skip:process.platform!=='win32'},async t=>{
  const fs=await import('node:fs/promises'),path=await import('node:path'),os=await import('node:os');
  const base=await fs.mkdtemp(path.join(os.tmpdir(),'nexus-synthetic-'));
  const root=path.join(base,'approved'),outside=path.join(base,'outside'),link=path.join(root,'junction');
@@ -62,8 +62,40 @@ test('real Windows file access accepts a regular file, denies directories, missi
  try{
   const handle=await checkedFile(path.join(root,'sample.txt'),[{path:root}]);assert.equal(await handle.readFile('utf8'),'synthetic');await handle.close();
   await assert.rejects(()=>checkedFile(root,[{path:root}]));await assert.rejects(()=>checkedFile(path.join(root,'missing.txt'),[{path:root}]));await assert.rejects(()=>checkedFile(path.join(outside,'other.txt'),[{path:root}]));
-  await fs.symlink(outside,link,'junction');await assert.rejects(()=>checkedFile(path.join(link,'other.txt'),[{path:root}]));
+  await t.test('junction access is denied',async t=>{try{await fs.symlink(outside,link,'junction');}catch(e){if(e.code==='EPERM'||e.code==='EACCES'){t.skip('The environment cannot create a junction; repeat on the Windows host.');return;}throw e;}await assert.rejects(()=>checkedFile(path.join(link,'other.txt'),[{path:root}]));});
  }finally{
   await fs.unlink(link).catch(()=>{});await fs.unlink(path.join(root,'sample.txt'));await fs.unlink(path.join(outside,'other.txt'));await fs.rmdir(root);await fs.rmdir(outside);await fs.rmdir(base);
  }
+});
+
+test('tree queries select immediate children and preserve folder boundaries',()=>{
+ const cfg=config(env);
+ const query=searchQuery(new URLSearchParams({folder:'C:\\ExampleData',view:'children'}),cfg);
+ const pattern=query.url.searchParams.get('search').match(/^regex:"([^"]+)"/)[1];
+ const re=new RegExp(pattern,'i');
+ assert(re.test('C:\\ExampleData\\Projects'));assert(re.test('C:\\ExampleData\\sample.pdf'));
+ assert(!re.test('C:\\ExampleData\\Projects\\Nested'));assert(!re.test('C:\\ExampleData-other\\Projects'));
+ assert.throws(()=>searchQuery(new URLSearchParams({view:'children'}),cfg));
+ assert.throws(()=>searchQuery(new URLSearchParams({folder:'C:\\Secret',view:'children'}),cfg));
+ const uncCfg=config({...env,NEXUS_ROOTS:JSON.stringify([{path:'\\\\example-server\\example-share'}])});
+ const uncQuery=searchQuery(new URLSearchParams({folder:'\\\\example-server\\example-share',view:'children'}),uncCfg);
+ const uncPattern=uncQuery.url.searchParams.get('search').match(/^regex:"([^"]+)"/)[1];
+ assert(new RegExp(uncPattern,'i').test('\\\\example-server\\example-share\\Projects'));
+ assert(!new RegExp(uncPattern,'i').test('\\\\example-server\\example-share\\Projects\\Nested'));
+});
+test('tree API authenticates roots, paginates immediate folders and rejects malformed upstream pages',async t=>{
+ const cfg={...config(env),port:31373};let last,mode='folders';
+ const app=createApp(cfg,{fetcher:async url=>{last=url;return new Response(JSON.stringify({totalResults:101,results:[{name:'Projects',path:mode==='nested'?'C:\\ExampleData\\Other':'C:\\ExampleData',type:mode==='file'?'file':'folder'}]}));}});
+ await new Promise((r,j)=>{app.once('error',j);app.listen(cfg.port,'127.0.0.1',r);});t.after(()=>new Promise(r=>{app.closeAllConnections();app.close(r);}));
+ const origin=`http://127.0.0.1:${cfg.port}`;
+ for(const route of ['/api/roots','/api/folders?folder=C%3A%5CExampleData']){const r=await fetch(origin+route);assert.equal(r.status,401);assert(!(await r.text()).includes('ExampleData'));}
+ const login=await fetch(origin+'/api/login',{method:'POST',headers:{Origin:origin},body:JSON.stringify({password})});const headers={Cookie:login.headers.get('set-cookie').split(';')[0]};
+ const roots=await(await fetch(origin+'/api/roots',{headers})).json();assert.deepEqual(roots.roots,[{name:'ExampleData',path:'C:\\ExampleData'}]);
+ const folderUrl=origin+'/api/folders?'+new URLSearchParams({folder:'C:\\ExampleData',offset:'100',q:'ignored',type:'file',ext:'pdf'});
+ const response=await fetch(folderUrl,{headers});assert.equal(response.status,200);const data=await response.json();assert.equal(data.offset,100);assert.equal(data.count,100);assert.equal(data.total,101);assert.equal(data.items[0].type,'folder');
+ assert(last.searchParams.get('search').includes('folder:'));assert(!last.searchParams.get('search').includes('ext:pdf'));assert(!last.searchParams.get('search').includes('ignored'));assert.equal(last.searchParams.get('count'),'100');
+ mode='nested';assert.equal((await fetch(folderUrl,{headers})).status,502);
+ mode='file';assert.equal((await fetch(folderUrl,{headers})).status,502);
+ assert.equal((await fetch(origin+'/api/folders?'+new URLSearchParams({folder:'C:\\Secret'}),{headers})).status,403);
+ assert.equal((await fetch(origin+'/api/folders',{headers})).status,400);
 });
