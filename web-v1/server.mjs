@@ -73,7 +73,7 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new Us
      const params=new URLSearchParams(url.searchParams);
      if(!roots.length){if(params.get('folder'))fail(403,'Pasta fora do escopo.');return json(res,200,{items:[],total:0,offset:0,count:25});}
      if(inFlight>=3)fail(429,'Há pesquisas em andamento. Tente novamente.');
-     if(route==='/api/folders'){params.set('type','folder');params.set('q','');params.set('ext','');params.set('count','100');params.set('view','children');}
+     if(route==='/api/folders'){params.delete('modifiedFrom');params.delete('modifiedTo');params.set('type','folder');params.set('q','');params.set('ext','');params.set('count','100');params.set('view','children');}
      const query=searchQuery(params,scope);let data;
      inFlight++;try{const response=await fetcher(query.url,{signal:AbortSignal.timeout(8000),redirect:'error'});if(!response.ok)throw Error();const chunks=[];let bytes=0;for await(const c of response.body){bytes+=c.length;if(bytes>2*1024*1024)throw Error();chunks.push(c);}data=JSON.parse(Buffer.concat(chunks).toString());}
      catch{fail(502,'Everything indisponível ou resposta inválida. Verifique o serviço local na porta 8888.');}finally{inFlight--;}

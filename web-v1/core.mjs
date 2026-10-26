@@ -33,7 +33,22 @@ export function config(env=process.env) {
  return {port,host,mode,publicOrigin,tls,upstream,roots,hash,downloads:env.NEXUS_DOWNLOADS==='true',usersFile:path.resolve(env.NEXUS_USERS_FILE||fileURLToPath(new URL('./data/users.json',import.meta.url)))};
 }
 export function passwordOK(password,hash) { const [salt,expected]=hash.split(':'); return typeof password==='string'&&password.length<=1024&&timingSafeEqual(scryptSync(password,salt,64),Buffer.from(expected,'hex')); }
+// Calendar days use the Everything host's local timezone.
+export function modifiedPeriod(params) {
+ const from=params.get('modifiedFrom')||'',to=params.get('modifiedTo')||'';
+ const valid=value=>{
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||value<'1601-01-01'||value>'9999-12-31')return false;
+  const date=new Date(value+'T00:00:00Z');
+  return Number.isFinite(date.getTime())&&date.toISOString().slice(0,10)===value;
+ };
+ if((from&&!valid(from))||(to&&!valid(to)))fail(400,'Período inválido. Informe datas válidas.');
+ if(from&&to&&from>to)fail(400,'A data inicial deve ser anterior ou igual à data final.');
+ // Everything date ranges include both entire calendar days.
+ const terms=from&&to?['dm:'+from+'..'+to]:from?['dm:>='+from]:to?['dm:<='+to]:[];
+ return {from,to,terms};
+}
 export function searchQuery(params,cfg) {
+ const period=modifiedPeriod(params);
  const q=(params.get('q')||'').trim(), folder=params.get('folder')||'', type=params.get('type')||'all', ext=params.get('ext')||'';
  if(q.length>200||q.includes('"')||/[\x00-\x1f]/.test(q)||!['all','file','folder'].includes(type)||!/^([a-z0-9]{1,16}(;[a-z0-9]{1,16})*)?$/i.test(ext)) fail(400,'Filtro inválido. Use texto simples, sem aspas.');
  if(folder&&(!safePath(folder)||!cfg.roots.some(r=>inside(r.path,folder)))) fail(403,'Pasta fora do escopo.');
@@ -42,7 +57,7 @@ export function searchQuery(params,cfg) {
  const offset=Number(params.get('offset')||0), count=Number(params.get('count')||25);
  if(!Number.isSafeInteger(offset)||offset<0||offset>1000000||![25,50,100].includes(count)) fail(400,'Paginação inválida.');
  const scopes=(folder?[{path:folder}]:cfg.roots).map(r=>reEscape(r.path.replace(/\\$/,''))+'\\\\');
- const query=[`regex:"^(?:${scopes.join('|')})${view==='children'?'[^\\\\]+$':''}"`,...(q?[`regex:"${reEscape(q)}"`]:[]),...(type==='all'?[]:[type==='folder'?'folder:':'file:']),...(ext?[`ext:${ext}`]:[])].join(' ');
+ const query=[`regex:"^(?:${scopes.join('|')})${view==='children'?'[^\\\\]+$':''}"`,...(q?[`regex:"${reEscape(q)}"`]:[]),...(type==='all'?[]:[type==='folder'?'folder:':'file:']),...(ext?[`ext:${ext}`]:[]),...period.terms].join(' ');
  const url=new URL(cfg.upstream); for(const [k,v] of Object.entries({search:query,json:1,path:1,path_column:1,size_column:1,offset,count,sort:'name',ascending:1})) url.searchParams.set(k,v);
  return {url,offset,count,q,folder,view};
 }

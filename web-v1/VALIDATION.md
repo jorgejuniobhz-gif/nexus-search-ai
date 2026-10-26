@@ -35,3 +35,9 @@ Testadas senha atual incorreta, confirmação divergente, senha curta, troca de 
 ## Assistente HTTPS
 
 Testada conexão TLS real com validação normal: cliente sem a autoridade local é recusado; cliente com a autoridade e nome corretos é aceito. Testadas assinatura, nome incorreto, preservação de .env/contas/downloads, backup, tratamento de chaves duplicadas e reutilização sem regenerar certificados válidos. Proteção NTFS via icacls, importação no repositório de certificados do Windows, firewall e confiança nos navegadores da equipe exigem homologação no host; o teste de arquivos usa um protetor de diretório simulado. Nenhuma chave ou certificado gerado foi incluído na entrega.
+
+## Filtro por período 1.1.3
+
+Suite completa: 19 verificações, 18 aprovadas, nenhuma falha e 1 subteste de junction ignorado porque o ambiente não permite criar essa fixture. Testados datas impossíveis, anos bissextos, limites 1601–9999, formato/injeção, início após fim, mesmo dia, só início, só fim, combinação com texto e extensão, paginação após filtrar, conta limitada a uma subpasta e árvore sem filtro de data. Intervalos inválidos e pasta não permitida não chegam ao upstream. A fixture cobre início do primeiro dia e 23:59:59 do último; o parser real do Everything 1.4.1 deve ser homologado no host com arquivos conhecidos.
+
+Navegador conferido com API fictícia: preenchimento dos dois calendários, combinação com PDF/tipo, contagem, aviso de intervalo invertido e Limpar filtros. Captura nexus-periodo.png com dados fictícios. A execução inicial da suite foi bloqueada pela rede local do sandbox; após autorização de conexões locais a suite passou.

@@ -19,3 +19,13 @@ Sem resultados: confirme que a raiz existe no índice usando o mesmo caminho loc
 Inventários, checkpoints e Onyx existentes não são alterados. Não publique .env, data/, contas, certificados, caminhos reais ou arquivos do acervo.
 
 Para configurar HTTPS com o nome nexus, consulte HTTPS-LAN.md e execute npm.cmd run setup:https -- --name nexus no host já configurado. O assistente não instala confiança nem abre firewall automaticamente.
+
+## Filtro por período (1.1.3)
+
+Use Modificado de e Até para filtrar pela última modificação registrada no índice Everything. As duas datas são opcionais: só início pesquisa daquela data em diante; só fim pesquisa até aquele dia. O intervalo inclui os dois dias completos, no horário local do host Everything. Não é a data mencionada no conteúdo/nome do documento nem a data de criação. Datas inválidas ou início posterior ao fim são recusados no servidor.
+
+Combina com texto, extensão/categoria, tipo e pasta permitida. Ao selecionar uma pasta, preencher o período pesquisa também suas subpastas. A árvore permanece disponível sem filtro de data para navegação. Totais e paginação são calculados pelo Everything já com o período aplicado. Limpar filtros remove as datas e mantém a pasta atual. Arquivos sem data de modificação conhecida no índice podem não aparecer quando o período está ativo.
+
+A atualização usa o .env, contas e certificados existentes. Não execute setup nem setup:https novamente. Encerre o processo antes de substituir os arquivos, reinicie pelo método já utilizado e atualize o navegador com Ctrl+F5.
+
+Sintaxe upstream: [documentação do Everything](https://www.voidtools.com/support/everything/searching/), dm:AAAA-MM-DD..AAAA-MM-DD, dm:>=AAAA-MM-DD e dm:<=AAAA-MM-DD.
