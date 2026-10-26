@@ -13,7 +13,7 @@ A administração usa contas próprias do Nexus, conforme o modelo aprovado pelo
 
 O painel permite editar nome, login, pastas, permissão de download e estado ativo. Deixe a senha vazia na edição para mantê-la; preencha para redefinir. As senhas nunca são recuperadas nem exibidas.
 
-Qualquer alteração encerra as sessões anteriores e interrompe downloads ativos. Desativar impede novos logins. Reativar não restaura sessões antigas. A conta administrativa principal fica no .env, não pode ser removida pelo painel e não é possível promover contas comuns a administrador. Não existe autocadastro.
+Qualquer alteração encerra as sessões anteriores e interrompe downloads ativos. Desativar impede novos logins. Reativar não restaura sessões antigas. O login administrativo principal é criado a partir do .env e não pode ser removido pelo painel e não é possível promover contas comuns a administrador. Não existe autocadastro.
 
 ## Dados locais e proteção
 
@@ -39,3 +39,11 @@ As concessões do painel autorizam pesquisa e, quando marcada, leitura do conte�
 O painel não altera permissões dos compartilhamentos Windows: acesso direto pelo Explorador continua seguindo a configuração atual do servidor. As raízes e seus ancestrais precisam ser administrados por pessoas confiáveis. Não há isolamento contra administrador local malicioso ou substituições concorrentes de diretórios por quem controla o filesystem. Verificar links pelo cliente SMB não substitui o controle do servidor de arquivos.
 
 A versão usa cookies HttpOnly/SameSite=Strict e Secure no HTTPS, validação de Host e origem, bloqueio de cabeçalhos de proxy, limites de login por IP/conta, 3 buscas simultâneas, timeout upstream de 8 segundos e resposta de até 2 MB. Não registra pesquisas/caminhos nem envia conteúdo a IA.
+
+## Trocar sua própria senha
+
+Use o botão Trocar minha senha no topo da página. Informe a senha atual, a nova senha de 12 a 128 caracteres e sua confirmação. Essa opção funciona para admin e contas comuns. Ao salvar, todas as sessões da conta são encerradas; entre novamente com a nova senha.
+
+A senha administrativa alterada fica como hash protegido em data/users.json, substituindo a credencial inicial do .env para os próximos logins. Não edita nem precisa regenerar o .env. Preserve data/ nos backups: apagar a base não é um procedimento de recuperação. Editar outras contas não modifica a senha administrativa.
+
+O administrador continua podendo redefinir a senha de uma conta comum em Usuários → Editar. A troca própria exige a senha atual e não permite escolher outra conta como alvo.

@@ -4,8 +4,8 @@ const el=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefine
 const button=(text,fn)=>{const b=el('button',text);b.type='button';b.addEventListener('click',fn);return b;};
 function message(s){$('status').textContent=s;}
 async function api(url,options={}){const res=await fetch(url,{...options,headers:{'Content-Type':'application/json',...options.headers}});const data=await res.json();if(res.status===401){showLogin();}if(!res.ok)throw Error(data.error||'Não foi possível concluir.');return data;}
-function showLogin(){for(const id of ['query','ext','category'])$(id).value='';$('type').value='all';$('location').replaceChildren();$('summary').textContent='Pronto para pesquisar';$('page').textContent='';document.dispatchEvent(new Event('nexus-session-ended'));currentUser=null;$('usersPanel').hidden=true;$('manageUsers').hidden=true;$('identity').textContent='● Acesso protegido';resetTree();folder='';offset=0;controller?.abort();clearTimeout(timer);version++;$('login').hidden=false;$('workspace').hidden=true;$('logout').hidden=true;$('results').replaceChildren();$('password').value='';}
-async function enter(){const session=await api('/api/session');downloads=session.downloads;currentUser=session.user;$('identity').textContent='● '+session.user.name;$('manageUsers').hidden=session.user.role!=='admin';$('usersPanel').hidden=true;$('login').hidden=true;$('workspace').hidden=false;$('logout').hidden=false;$('password').value='';message('Sessão de 30 minutos.');search();loadTree();}
+function showLogin(){$('changePassword').hidden=true;for(const id of ['query','ext','category'])$(id).value='';$('type').value='all';$('location').replaceChildren();$('summary').textContent='Pronto para pesquisar';$('page').textContent='';document.dispatchEvent(new Event('nexus-session-ended'));currentUser=null;$('usersPanel').hidden=true;$('manageUsers').hidden=true;$('identity').textContent='● Acesso protegido';resetTree();folder='';offset=0;controller?.abort();clearTimeout(timer);version++;$('login').hidden=false;$('workspace').hidden=true;$('logout').hidden=true;$('results').replaceChildren();$('password').value='';}
+async function enter(){const session=await api('/api/session');downloads=session.downloads;$('changePassword').hidden=false;currentUser=session.user;$('identity').textContent='● '+session.user.name;$('manageUsers').hidden=session.user.role!=='admin';$('usersPanel').hidden=true;$('login').hidden=true;$('workspace').hidden=false;$('logout').hidden=false;$('password').value='';message('Sessão de 30 minutos.');search();loadTree();}
 $('loginForm').addEventListener('submit',async e=>{e.preventDefault();try{await api('/api/login',{method:'POST',body:JSON.stringify({username:$('username').value,password:$('password').value})});await enter();}catch(e){message(e.message);}});
 $('logout').addEventListener('click',async()=>{try{await api('/api/logout',{method:'POST',body:'{}'});showLogin();message('Sessão encerrada.');}catch(e){message(e.message);}});
 function navigate(p){folder=p;offset=0;markSelection();search();}
@@ -52,3 +52,12 @@ async function loadTree(){resetTree();const epoch=treeEpoch;$('treeStatus').text
 $('allRoots').addEventListener('click',()=>navigate(''));
 $('refreshTree').addEventListener('click',()=>loadTree());
 enter().catch(()=>message('Entre para pesquisar suas pastas permitidas.'));
+
+$('changePassword').addEventListener('click',()=>{$('passwordForm').reset();$('passwordStatus').textContent='';$('passwordDialog').showModal();});
+$('cancelPassword').addEventListener('click',()=>$('passwordDialog').close());
+$('passwordDialog').addEventListener('close',()=>{$('passwordForm').reset();$('passwordStatus').textContent='';});
+document.addEventListener('nexus-session-ended',()=>{$('passwordDialog').close();$('passwordForm').reset();});
+$('passwordForm').addEventListener('submit',async e=>{
+ e.preventDefault();if($('newPassword').value!==$('confirmPassword').value){$('passwordStatus').textContent='A confirmação deve ser igual à nova senha.';return;}
+ $('savePassword').disabled=true;try{await api('/api/password',{method:'POST',body:JSON.stringify({currentPassword:$('currentPassword').value,newPassword:$('newPassword').value,confirmPassword:$('confirmPassword').value})});showLogin();message('Senha alterada. Entre novamente com sua nova senha.');}catch(e){$('passwordStatus').textContent=e.message;}finally{$('savePassword').disabled=false;}
+});

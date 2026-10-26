@@ -79,3 +79,23 @@ test('deactivation aborts an already-open download',async t=>{
  const changed=await fetch(origin+'/api/admin/users/'+user.id,{method:'POST',headers:{Origin:origin,Cookie:admin},body:JSON.stringify({...user,active:false})});assert.equal(changed.status,200);
  let ended=false;try{ended=(await reader.read()).done;}catch{ended=true;}assert(ended);assert.equal((await fetch(origin+'/api/session',{headers:{Cookie:cookie}})).status,401);
 });
+
+test('self-service password change verifies current secret, revokes all sessions and persists admin override',async t=>{
+ const fs=await import('node:fs/promises');const base=await fs.mkdtemp(path.join(process.cwd(),'.nexus-test-password-')),file=path.join(base,'users.json');let users=await UserStore.open(file);const cfg={...config(env),port:31376};const user=await users.save(makeUser('changer',[]),cfg);
+ const app=createApp(cfg,{users});await new Promise(r=>app.listen(cfg.port,'127.0.0.1',r));t.after(async()=>{app.closeAllConnections();await new Promise(r=>app.close(r));await fs.unlink(file);await fs.rmdir(base);});
+ const origin=`http://127.0.0.1:${cfg.port}`;const req=(route,cookie='',method='GET',payload)=>fetch(origin+route,{method,headers:{Origin:origin,Cookie:cookie},...(payload?{body:JSON.stringify(payload)}:{})});
+ const login=async(username,pass)=>{const r=await req('/api/login','','POST',{username,password:pass});assert.equal(r.status,200);return r.headers.get('set-cookie').split(';')[0];};
+ const change=(cookie,old,next,confirmation=next)=>req('/api/password',cookie,'POST',{currentPassword:old,newPassword:next,confirmPassword:confirmation,userId:'bootstrap-admin'});
+ assert.equal((await change('',password,'synthetic-new-secret')).status,401);
+ const first=await login('changer','synthetic-user-password'),second=await login('changer','synthetic-user-password');
+ assert.equal((await change(first,'wrong','synthetic-new-secret')).status,403);
+ assert.equal((await change(first,'synthetic-user-password','synthetic-new-secret','mismatch')).status,400);
+ assert.equal((await change(first,'synthetic-user-password','short')).status,400);
+ assert.equal((await change(first,'synthetic-user-password','synthetic-new-secret')).status,200);
+ assert.equal((await req('/api/session',first)).status,401);assert.equal((await req('/api/session',second)).status,401);assert.equal(users.admin,null);assert(passwordOK('synthetic-new-secret',users.get(user.id).hash));
+ const admin=await login('admin',password);assert.equal((await change(admin,password,'synthetic-new-admin')).status,200);assert.equal((await req('/api/session',admin)).status,401);
+ assert.equal((await req('/api/login','','POST',{username:'admin',password})).status,401);await login('admin','synthetic-new-admin');
+ const restored=await UserStore.open(file);assert(passwordOK('synthetic-new-admin',restored.admin.hash));assert(!passwordOK(password,restored.admin.hash));assert(passwordOK('synthetic-new-secret',restored.get(user.id).hash));
+ // An unrelated account update must not erase the administrator's new credential.
+ await restored.save({...restored.list()[0],name:'Updated name'},cfg,user.id);const reopened=await UserStore.open(file);assert(passwordOK('synthetic-new-admin',reopened.admin.hash));assert(!(await fs.readFile(file,'utf8')).includes('synthetic-new-admin'));
+});

@@ -26,3 +26,7 @@ A instalação continua local por padrão. As contas já funcionam no host local
 ## Reversão
 
 Encerre o processo e restaure os arquivos do programa da cópia anterior. Preserve os dados locais separadamente. Não altere dados das raízes, inventários, checkpoints ou Onyx.
+
+## Sua senha
+
+Depois de entrar, abra Trocar minha senha no topo. Informe a atual, a nova e confirme. Após salvar, entre novamente. Para admin, a senha nova é guardada em data/users.json, sem editar o .env. Preserve os dois em futuras atualizações.

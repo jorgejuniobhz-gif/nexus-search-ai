@@ -14,7 +14,7 @@ async function body(req){let text='';for await(const chunk of req){text+=chunk;i
 export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new UserStore()}={}){
  const sessions=new Map(),attempts=new Map();let inFlight=0;
  const origin=cfg.publicOrigin||`http://127.0.0.1:${cfg.port}`;
- const admin=()=>({id:ADMIN_ID,username:'admin',name:'Administrador',active:true,version:1,downloads:true});
+ const admin=()=>({id:ADMIN_ID,username:'admin',name:'Administrador',active:true,version:users.admin?.version||1,hash:users.admin?.hash||cfg.hash,downloads:true});
  const account=id=>id===ADMIN_ID?admin():users.get(id);
  function revoke(userId){for(const [id,s] of sessions)if(s.userId===userId){for(const stream of s.streams)stream.destroy();sessions.delete(id);}}
  function current(session,token){
@@ -39,7 +39,7 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new Us
     if(attempts.size>2000)fail(429,'Muitas tentativas. Aguarde um minuto.');
     for(const [key,max] of [[`ip:${req.socket.remoteAddress}`,20],[`user:${username.slice(0,32)}`,6]]){const bucket=attempts.get(key)||{since:Date.now(),count:0};if(bucket.count>=max)fail(429,'Aguarde um minuto antes de tentar novamente.');bucket.count++;attempts.set(key,bucket);}
     const user=username==='admin'?admin():users.find(username);
-    const valid=passwordOK(input?.password,user?.id===ADMIN_ID?cfg.hash:user?.hash||cfg.hash);
+    const valid=passwordOK(input?.password,user?.hash||cfg.hash);
     if(!valid||!user?.active)fail(401,'Usuário ou senha inválidos.');
     if(session){for(const stream of session.streams)stream.destroy();sessions.delete(token);}
     const id=randomBytes(32).toString('hex');if(sessions.size>=1000)fail(429,'Limite de sessões atingido.');
@@ -50,6 +50,14 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new Us
     const user=current(session,token),isAdmin=user.id===ADMIN_ID;
     const roots=accountRoots(user,cfg),scope={...cfg,roots},canDownload=cfg.downloads&&user.downloads;
     if(route==='/api/logout'&&req.method==='POST'){for(const stream of session.streams)stream.destroy();sessions.delete(token);res.setHeader('Set-Cookie',`nexus=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cfg.tls?'; Secure':''}`);return json(res,200,{ok:true});}
+    if(route==='/api/password'&&req.method==='POST'){
+     const key='password:'+user.id;let bucket=attempts.get(key);if(!bucket||bucket.since<Date.now()-60000)bucket={since:Date.now(),count:0};if(bucket.count>=6)fail(429,'Aguarde um minuto antes de tentar novamente.');bucket.count++;attempts.set(key,bucket);
+     const input=await body(req);
+     if(!passwordOK(input?.currentPassword,user.hash))fail(403,'Senha atual incorreta.');
+     if(typeof input.newPassword!=='string'||input.newPassword!==input.confirmPassword)fail(400,'A confirmação deve ser igual à nova senha.');
+     await users.changePassword(user.id,input.newPassword,user.version);revoke(user.id);
+     res.setHeader('Set-Cookie',`nexus=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cfg.tls?'; Secure':''}`);return json(res,200,{ok:true});
+    }
     if(route==='/api/session'&&req.method==='GET')return json(res,200,{mode:cfg.mode||'admin-local',downloads:canDownload,expires:session.expires,user:{username:user.username,name:user.name,role:isAdmin?'admin':'user'}});
     if(route==='/api/admin/users'||route.startsWith('/api/admin/users/')){
      if(!isAdmin)fail(403,'Somente o administrador pode gerenciar usuários.');

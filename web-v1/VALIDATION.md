@@ -1,6 +1,6 @@
 # Validação — Web 1.1
 
-14 verificações: **13 aprovadas, nenhuma falha e 1 subteste de junction ignorado** porque o ambiente atual não permite criar a fixture (EPERM). A leitura de arquivo sintético, rejeição de diretório/arquivo ausente e contenção de caminhos passaram. O bloqueio de junctions continua implementado e havia passado na entrega inicial; repetir em um Windows que permita a fixture.
+15 verificações: **14 aprovadas, nenhuma falha e 1 subteste de junction ignorado** porque o ambiente atual não permite criar a fixture (EPERM). A leitura de arquivo sintético, rejeição de diretório/arquivo ausente e contenção de caminhos passaram. O bloqueio de junctions continua implementado e havia passado na entrega inicial; repetir em um Windows que permita a fixture.
 
 ## Cobertura automatizada
 
@@ -27,3 +27,7 @@ API e acervo exclusivamente fictícios. Conferidos: login administrativo, painel
 Não houve acesso ao Everything ou acervo real da instalação do usuário. É necessário homologar Everything 1.4.1, leitura NTFS/SMB, mapeamentos UNC e firewall no host de operação. O modo HTTPS usa o servidor TLS padrão do Node; certificado, cadeia, confiança dos clientes e acesso por outros PCs devem ser verificados na LAN real. Os testes de configuração não comprovam essa implantação.
 
 O pacote de atualização não inclui .env, data/, contas, certificados/chaves, caminhos reais ou arquivos do acervo. Não foram modificados inventário, checkpoints, Onyx, Everything, firewall ou serviços existentes.
+
+## Troca da própria senha
+
+Testadas senha atual incorreta, confirmação divergente, senha curta, troca de conta comum sem afetar admin, encerramento de todas as sessões, troca administrativa persistente, recusa da credencial antiga e preservação do hash administrativo ao editar outras contas. Nenhuma senha real foi usada. A tela de troca foi conferida no navegador sem alterar credenciais reais.

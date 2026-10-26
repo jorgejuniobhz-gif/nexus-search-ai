@@ -11,17 +11,30 @@ export function hashPassword(password){
 export function visibleUser(u){return {id:u.id,username:u.username,name:u.name,active:u.active,downloads:u.downloads,paths:[...u.paths],version:u.version};}
 function validRecord(u){return u&&/^[a-f0-9]{32}$/.test(u.id)&&/^[a-z0-9][a-z0-9._-]{2,31}$/.test(u.username)&&u.username!=='admin'&&typeof u.name==='string'&&u.name.trim().length>0&&u.name.length<=80&&!/[\x00-\x1f]/.test(u.name)&&typeof u.active==='boolean'&&typeof u.downloads==='boolean'&&Array.isArray(u.paths)&&u.paths.length<=20&&u.paths.every(safePath)&&hashPattern.test(u.hash)&&Number.isSafeInteger(u.version)&&u.version>=1;}
 export class UserStore {
- constructor(file=null,users=[]){this.file=file;this.users=users;this.queue=Promise.resolve();}
+ constructor(file=null,users=[],admin=null){this.file=file;this.users=users;this.admin=admin;this.queue=Promise.resolve();}
  static async open(file){
-  let users=[];
-  try{const raw=await readFile(file);if(raw.length>2*1024*1024)throw Error();const data=JSON.parse(raw.toString().trim());if(data.schema!==1||!Array.isArray(data.users)||data.users.length>200||!data.users.every(validRecord))throw Error();users=data.users;
+  let users=[],admin=null;
+  try{const raw=await readFile(file);if(raw.length>2*1024*1024)throw Error();const data=JSON.parse(raw.toString().trim());if(data.schema!==1||!Array.isArray(data.users)||data.users.length>200||!data.users.every(validRecord))throw Error();users=data.users;admin=data.admin??null;if(admin&&(!hashPattern.test(admin.hash)||!Number.isSafeInteger(admin.version)||admin.version<2))throw Error();
    if(new Set(users.map(u=>u.id)).size!==users.length||new Set(users.map(u=>u.username)).size!==users.length)throw Error();
   }catch(e){if(e.code!=='ENOENT')throw Error('Base de usuários inválida ou sem acesso. Restaure a cópia local; nenhuma conta foi recriada.');}
-  return new UserStore(file,users);
+  return new UserStore(file,users,admin);
  }
  get(id){return this.users.find(u=>u.id===id);}
  find(username){return this.users.find(u=>u.username===username);}
  list(){return this.users.map(visibleUser);}
+ async persist(users,admin){
+  const serialized=JSON.stringify({schema:1,users,...(admin?{admin}:{})});if(Buffer.byteLength(serialized)>2*1024*1024)fail(409,'Limite da base de usuários atingido.');
+  if(this.file){await mkdir(path.dirname(this.file),{recursive:true});const tmp=this.file+'.'+randomBytes(8).toString('hex')+'.tmp';try{await writeFile(tmp,serialized,{flag:'wx',mode:0o600});await rename(tmp,this.file);}finally{await unlink(tmp).catch(()=>{});}}
+ }
+ changePassword(id,password,version){
+  const operation=this.queue.then(async()=>{
+   const previous=id===ADMIN_ID?{version:this.admin?.version||1}:this.get(id);
+   if(!previous||previous.version!==version||previous.active===false)fail(409,'Conta alterada. Entre novamente antes de trocar a senha.');
+   const hash=hashPassword(password);
+   if(id===ADMIN_ID){const admin={hash,version:previous.version+1};await this.persist(this.users,admin);this.admin=admin;}
+   else{const next=this.users.map(u=>u.id===id?{...u,hash,version:u.version+1}:u);await this.persist(next,this.admin);this.users=next;}
+  });this.queue=operation.catch(()=>{});return operation;
+ }
  save(input,cfg,id=null){
   const operation=this.queue.then(async()=>{
    if(!input||typeof input!=='object')fail(400,'Cadastro inválido.');
@@ -40,11 +53,7 @@ export class UserStore {
    if(!prev&&this.users.length>=200)fail(409,'Limite de 200 usuários atingido. Desative contas sem uso.');
    const user={id:prev?.id||randomBytes(16).toString('hex'),username,name,hash,active:input.active,downloads:input.downloads,paths:minimal,version:(prev?.version||0)+1};
    const next=this.users.filter(u=>u.id!==user.id).concat(user);
-   const serialized=JSON.stringify({schema:1,users:next});if(Buffer.byteLength(serialized)>2*1024*1024)fail(409,'Limite da base de usuários atingido.');
-   if(this.file){
-    await mkdir(path.dirname(this.file),{recursive:true});const tmp=this.file+'.'+randomBytes(8).toString('hex')+'.tmp';
-    try{await writeFile(tmp,serialized,{flag:'wx',mode:0o600});await rename(tmp,this.file);}finally{await unlink(tmp).catch(()=>{});}
-   }
+   await this.persist(next,this.admin);
    this.users=next;return visibleUser(user);
   });this.queue=operation.catch(()=>{});return operation;
  }
