@@ -12,5 +12,5 @@ try {
  config(env);
  const text=Object.entries(env).map(([k,v])=>`${k}='${v.replace(/'/g,"'\"'\"'")}'`).join('\n');
  if(Object.values(env).some(v=>v.includes("'")))throw Error('Use raízes sem apóstrofos nesta configuração.');
- await writeFile(new URL('../.env',import.meta.url),text+'\n',{flag:'wx',mode:0o600});console.log('Senha do administrador: '+password);console.log('Configuração criada. Execute npm start.');
+ await writeFile(new URL('../.env',import.meta.url),text+'\n',{flag:'wx',mode:0o600});console.log('Senha do administrador: '+password);console.log('Configuração criada. Execute npm.cmd start.');
 }catch(e){console.error(e.code==='EEXIST'?'Já existe .env. Edite-a localmente; nenhum arquivo foi substituído.':e.message);process.exitCode=1;}finally{rl.close();}

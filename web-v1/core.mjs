@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { scryptSync, timingSafeEqual } from 'node:crypto';
 export class HttpError extends Error { constructor(status, message) { super(message); this.status=status; } }
 export const fail=(code,message)=>{throw new HttpError(code,message);};
@@ -10,7 +11,16 @@ export function safePath(p) {
  return p.split('\\').every((part,i)=>!part||(!/[ .]$/.test(part)&&part!=='.'&&part!=='..'&&!/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(part)&&(!part.includes(':')||(i===0&&/^[a-z]:$/i.test(part)))));
 }
 export function config(env=process.env) {
- if((env.NEXUS_MODE||'admin-local')!=='admin-local'||(env.NEXUS_HOST||'127.0.0.1')!=='127.0.0.1') throw Error('Somente admin-local em 127.0.0.1 é permitido. LAN exige identidade e ACL por usuário.');
+ const mode=env.NEXUS_MODE||'admin-local',host=env.NEXUS_HOST||'127.0.0.1';
+ if(!['admin-local','accounts'].includes(mode)||(mode==='admin-local'&&host!=='127.0.0.1'))throw Error('Modo inválido. A instalação local deve usar 127.0.0.1.');
+ let publicOrigin=null,tls=null;
+ if(mode==='accounts'){
+  if(!env.NEXUS_TLS_CERT||!env.NEXUS_TLS_KEY||!env.NEXUS_PUBLIC_ORIGIN)throw Error('Acesso de equipe exige HTTPS: configure certificado, chave e origem pública.');
+  const origin=new URL(env.NEXUS_PUBLIC_ORIGIN);
+  if(origin.protocol!=='https:'||origin.pathname!=='/'||origin.search||origin.hash||origin.username||origin.password)throw Error('Origem pública HTTPS inválida.');
+  if(!['0.0.0.0','127.0.0.1'].includes(host))throw Error('Use 0.0.0.0 ou 127.0.0.1 como host.');
+  publicOrigin=origin.origin;tls={cert:env.NEXUS_TLS_CERT,key:env.NEXUS_TLS_KEY};
+ }
  const upstream=new URL(env.EVERYTHING_URL||'http://127.0.0.1:8888/');
  if(upstream.origin!=='http://127.0.0.1:8888'||upstream.pathname!=='/'||upstream.search||upstream.hash||upstream.username||upstream.password) throw Error('Everything deve ser http://127.0.0.1:8888/');
  const hash=env.NEXUS_ADMIN_HASH||'';
@@ -19,7 +29,8 @@ export function config(env=process.env) {
  if(!Array.isArray(roots)||!roots.length||roots.length>20) throw Error('Configure de 1 a 20 raízes aprovadas.');
  for(const r of roots) { if(!safePath(r.path)||(r.unc&&(!safePath(r.unc)||!r.unc.startsWith('\\\\')))) throw Error('Raiz inválida.'); r.path=path.win32.normalize(r.path); }
  const port=Number(env.NEXUS_PORT||3000); if(!Number.isInteger(port)||port<1024||port>65535||port===8888) throw Error('Porta inválida.');
- return {port,upstream,roots,hash,downloads:env.NEXUS_DOWNLOADS==='true'};
+ if(publicOrigin&&Number(new URL(publicOrigin).port||443)!==port)throw Error('A porta da origem HTTPS deve ser igual à porta do Nexus.');
+ return {port,host,mode,publicOrigin,tls,upstream,roots,hash,downloads:env.NEXUS_DOWNLOADS==='true',usersFile:path.resolve(env.NEXUS_USERS_FILE||fileURLToPath(new URL('./data/users.json',import.meta.url)))};
 }
 export function passwordOK(password,hash) { const [salt,expected]=hash.split(':'); return typeof password==='string'&&password.length<=1024&&timingSafeEqual(scryptSync(password,salt,64),Buffer.from(expected,'hex')); }
 export function searchQuery(params,cfg) {

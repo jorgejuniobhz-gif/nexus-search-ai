@@ -1,28 +1,28 @@
-# Atualizar a instalação existente
+# Atualização completa: árvore e usuários
 
-1. Na janela em que o Nexus está rodando, pressione **Ctrl+C**.
-2. Extraia o conteúdo de `nexus-atualizacao-arvore.zip` diretamente na pasta onde estão o `package.json` e o `.env` da instalação atual. Aceite substituir os arquivos do programa. O ZIP possui os arquivos na raiz, sem uma pasta externa adicional.
-3. Preserve o `.env` existente. O pacote não contém `.env` e não redefine a senha, as raízes aprovadas nem a opção de download. Não execute `setup` novamente. Guarde uma cópia de segurança da instalação anterior antes de substituir arquivos.
-4. Abra o PowerShell nessa mesma pasta e execute:
+1. Encerre o Nexus com **Ctrl+C** e faça uma cópia privada da instalação, incluindo .env e data/.
+2. Extraia o conteúdo de **nexus-atualizacao-usuarios-arvore.zip** diretamente na pasta que contém package.json e .env. Aceite substituir os arquivos do programa. O ZIP não tem uma pasta externa adicional.
+3. **Preserve .env e data/. Não execute setup novamente.** O pacote não contém configuração real nem base de usuários. Sua senha administrativa, raízes e opção de download permanecem iguais.
+4. No PowerShell, dentro dessa pasta, execute uma linha por vez:
 
-   ```powershell
-   npm.cmd test
-   npm.cmd start
-   ```
+    npm.cmd test
+    npm.cmd start
 
-5. Abra `http://127.0.0.1:3000` e pressione **Ctrl+F5** para atualizar a interface. Entre com a mesma senha.
+5. Abra sua URL atual (por padrão http://127.0.0.1:3000) e pressione **Ctrl+F5**.
+6. Entre com **usuário admin** e a mesma senha administrativa. Abra **Usuários** e cadastre as pessoas, com senha e pastas permitidas.
 
-## Como usar
+O download exige a opção global já existente e a permissão individual. Não é ativado globalmente pela atualização.
 
-- Na lateral, clique na seta para expandir uma pasta. Somente suas subpastas imediatas são carregadas. Use “Carregar mais pastas” quando houver mais de 100.
-- Clique no nome de uma pasta para ver seus arquivos e subpastas diretos.
-- Digite na pesquisa para procurar dentro da pasta selecionada e suas subpastas. As migalhas acima dos resultados indicam a localização.
-- Clique em “Todas as pastas permitidas” para pesquisar nas raízes aprovadas. “Limpar filtros” mantém a pasta selecionada.
-- “Atualizar” recarrega as raízes e limpa os ramos carregados. A árvore reflete as pastas presentes no índice do Everything.
-- A opção de download continua seguindo a configuração local existente e as verificações de leitura do backend.
+As contas são salvas automaticamente em data/users.json; preserve esse arquivo em futuros backups e atualizações. Na primeira utilização, a base é criada ao salvar a primeira conta. O arquivo e suas credenciais não integram o ZIP.
 
-A atualização mantém a versão de administrador local. O cadastro de usuários individuais e o acesso pela LAN não fazem parte desta atualização.
+## Uso da árvore
+
+A seta expande subpastas; o nome seleciona a pasta e mostra conteúdo direto. Digitar um termo inclui as subpastas. Todas as pastas permitidas volta à busca geral. Limpar filtros mantém a pasta selecionada. Atualizar recarrega os ramos do índice.
+
+## Acesso em outros PCs
+
+A instalação continua local por padrão. As contas já funcionam no host local. Para acesso na LAN, configure o modo accounts com HTTPS conforme DEPLOYMENT.md. O pacote não abre portas nem muda permissões Windows.
 
 ## Reversão
 
-Encerre o Nexus e restaure os arquivos do programa a partir da cópia anterior. Preserve seu `.env`. Não altere dados das raízes, inventários, checkpoints ou Onyx.
+Encerre o processo e restaure os arquivos do programa da cópia anterior. Preserve os dados locais separadamente. Não altere dados das raízes, inventários, checkpoints ou Onyx.

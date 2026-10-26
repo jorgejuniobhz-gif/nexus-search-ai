@@ -1,30 +1,29 @@
-# Validação da entrega — 26/10/2026
+# Validação — Web 1.1
 
-Node.js 24.21.0 em Windows. Sete testes automatizados aprovados, nenhum ignorado:
+14 verificações: **13 aprovadas, nenhuma falha e 1 subteste de junction ignorado** porque o ambiente atual não permite criar a fixture (EPERM). A leitura de arquivo sintético, rejeição de diretório/arquivo ausente e contenção de caminhos passaram. O bloqueio de junctions continua implementado e havia passado na entrega inicial; repetir em um Windows que permita a fixture.
 
-1. Configuração bloqueia bind LAN, modo multiusuário, upstream arbitrário e ausência de segredo.
-2. Contenção Windows rejeita diretórios com prefixo parecido, travessia, dispositivos, streams alternativos e caminhos malformados.
-3. Query fixa upstream, escapa operadores, restringe raízes e limita paginação.
-4. Resultados passam por allowlist e recebem UNC pelo mapeamento configurado.
-5. HTTP exige sessão/origem; recusa proxy, IDs inventados, falha upstream e resultados fora do escopo. Download negado após checagem inicial é bloqueado.
-6. Streaming de download usa ID emitido pelo backend e verifica acesso novamente.
-7. Leitura real de arquivo sintético no Windows funciona; diretório, arquivo ausente, caminho fora de escopo e junction são recusados.
+## Cobertura automatizada
 
-Sintaxe do JavaScript do navegador e do configurador verificada. Interface aberta no navegador com dados exclusivamente fictícios; login, resultados, migalhas, navegação, estado vazio e logout verificados. A prévia usa API simulada e não é servidor de produção.
+- Configuração falha para LAN sem HTTPS, origem HTTP, upstream arbitrário e ausência de segredo; o Everything continua fixo em loopback.
+- Validação de caminhos Windows/UNC, travessia, dispositivos, streams alternativos, escopo e paginação.
+- Autenticação, origem, rejeição de proxy, sessão, IDs aleatórios, download e nova checagem de leitura.
+- Árvore autenticada com filhos imediatos, paginação e rejeição de resultados de outro nível.
+- Base de usuários persistente com scrypt/salt, sem senha em texto claro ou hash na API; duplicidade de login, senha curta, pasta fora do escopo, conflito de edição e falha de gravação.
+- Duas contas com pastas distintas: raízes, árvore, nomes, totais e IDs de download isolados; conta comum não acessa administração.
+- Download depende das duas permissões: global e individual.
+- Resposta upstream fora do escopo não revela arquivo nem total global.
+- Desativação, mudança de senha e de pastas revogam sessões e impedem devolver buscas em andamento com permissões antigas.
+- Conta sem pastas retorna zero sem consultar o índice.
+- Desativar a conta interrompe um download já aberto.
 
-O isolamento inicial impediu conexões HTTP dos testes (`EACCES`); os testes foram repetidos com permissão de conexão local e passaram. Nenhuma proteção do produto foi removida para isso.
+A fixture persistente passou no diretório de trabalho. A pasta temporária isolada do sistema recusou rename; o teste foi movido para seu próprio diretório de trabalho autorizado e limpo após o uso, sem alterar o mecanismo de gravação do produto.
 
-## Pendente na instalação real
+## Navegador
 
-Everything não respondeu em `127.0.0.1:8888` no ambiente da entrega. Compatibilidade com a instância real 1.4.1, contagens, permissões NTFS/SMB, mapeamentos UNC, firewall e abertura pelo Explorador precisam da homologação documentada no README. Não há validação de identidades AD ou de grupos, portanto acesso da equipe pela LAN permanece bloqueado.
+API e acervo exclusivamente fictícios. Conferidos: login administrativo, painel, cadastro de conta, seleção de subpasta na árvore, permissão de download e login da conta comum mostrando somente sua pasta e sem botão de administração. Gestão de usuários conferida em larguras de 1280 e 390 pixels, sem rolagem horizontal. Conferidos também árvore por nível, segunda página de pastas, conteúdo direto, pesquisa recursiva e layout responsivo.
 
-Não foram alterados inventário, checkpoints, Onyx, configurações do Everything, firewall ou serviços existentes. Nenhum arquivo do acervo foi utilizado nos testes.
+## Limites de homologação
 
+Não houve acesso ao Everything ou acervo real da instalação do usuário. É necessário homologar Everything 1.4.1, leitura NTFS/SMB, mapeamentos UNC e firewall no host de operação. O modo HTTPS usa o servidor TLS padrão do Node; certificado, cadeia, confiança dos clientes e acesso por outros PCs devem ser verificados na LAN real. Os testes de configuração não comprovam essa implantação.
 
-## Atualização: árvore de pastas
-
-Nesta atualização, a suíte totalizou 10 verificações: 9 aprovadas, nenhuma falha e 1 subteste de junction ignorado porque o ambiente atual não permite criar junctions (EPERM). A leitura real de arquivos sintéticos, a recusa de pastas/arquivos ausentes e a contenção fora da raiz passaram. O teste de junction havia passado na entrega inicial; deve ser repetido em um Windows que permita criar a fixture. O bloqueio de junctions em produção permanece implementado.
-
-Os novos testes confirmam regex de filhos imediatos para caminhos Windows e UNC; raízes e árvore autenticadas; paginação de 100 pastas; rejeição de consultas fora da raiz; rejeição de resultados do nível errado e de arquivos retornados na árvore. Queries de pesquisa e downloads anteriores continuam cobertas.
-
-Conferência no navegador com API simulada: expansão por nível, segunda página de pastas, seleção, conteúdo direto, pesquisa recursiva, pasta sem subpastas, migalhas e manutenção da pasta ao limpar filtros. Layout verificado em larguras de 1280 e 390 pixels, sem rolagem horizontal. Sem acesso ao acervo real ou ao Everything do host de operação. O pacote de atualização não contém `.env` nem dados do usuário.
+O pacote de atualização não inclui .env, data/, contas, certificados/chaves, caminhos reais ou arquivos do acervo. Não foram modificados inventário, checkpoints, Onyx, Everything, firewall ou serviços existentes.

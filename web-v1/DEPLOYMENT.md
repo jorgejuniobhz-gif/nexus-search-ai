@@ -1,25 +1,50 @@
-# Execução e implantação na LAN
+# Execução local e LAN
 
-## Implantação disponível agora
+## Padrão preservado
 
-O Web 1.0 roda no host Windows de processamento, em loopback e com um único administrador. Essa restrição é implementada no código, não apenas uma recomendação. Não há URL LAN válida para a equipe nesta entrega. Manter a instalação no Windows evita confundir o `127.0.0.1` do WSL com o host do Everything e permite leitura direta dos arquivos pela conta Windows do processo.
+A atualização mantém o .env existente e o bind em 127.0.0.1. Todas as contas e o painel funcionam no modo admin-local somente no próprio PC. Não é necessário WSL. Execute no Windows que hospeda Everything, com uma conta Windows que tenha a leitura necessária. Não use SYSTEM nem elevação desnecessária.
 
-Para reinicialização automática, o administrador pode criar uma tarefa no Agendador de Tarefas com a conta Windows aprovada, diretório de trabalho desta pasta e ação `node.exe --env-file=.env server.mjs`. Aponte para o caminho absoluto do Node instalado; não use conta SYSTEM nem “executar com privilégios mais altos”. Não foi criada tarefa nem alterado firewall automaticamente. Sessões são reiniciadas a cada execução.
+Nenhuma tarefa, serviço, porta ou firewall é alterado automaticamente. Para iniciar após reinício, o administrador pode configurar o Agendador de Tarefas com o caminho absoluto do Node, argumentos --env-file=.env server.mjs, diretório do programa e a conta Windows aprovada.
 
-## Requisitos para a próxima liberação multiusuário
+## LAN com autenticação própria e HTTPS
 
-Não basta colocar autenticação no proxy. Antes de liberar uma porta LAN, implementar e testar conjuntamente:
+O modo escolhido usa login/senha e concessões de pastas no Nexus, sem AD. Para acessar de outros PCs:
 
-1. Identidade Windows/AD validada (por exemplo, IIS Windows Authentication com anônimo desativado), transporte HTTPS e canal backend autenticado que não aceite cabeçalhos de usuário enviados pelo cliente.
-2. Autorização server-side por SID/grupos e regras de raiz antes de consultar. Tratar metadados de nomes e caminhos como dados confidenciais.
-3. Verificação efetiva NTFS **e** compartilhamento SMB por usuário. Usar impersonação/delegação corretamente configurada ou um agente de acesso que avalie a identidade real. Ler com conta de serviço privilegiada e presumir permissão é proibido.
-4. Filtrar resultados antes de devolvê-los e calcular a contagem exclusivamente sobre resultados autorizados. Nunca revelar totais globais, breadcrumbs, nomes de pais, snippets ou mensagens de erro de áreas não autorizadas. Contagens do índice geral não podem ser reutilizadas após filtro de ACL.
-5. Vincular IDs e autorização à identidade e sessão; repetir checagem em navegação, abertura e cada download. Implementar revogação de grupos/permissões, auditoria protegida sem conteúdo sensível e testes com ao menos dois usuários de permissões distintas.
-6. Avaliar junctions, links, concorrência de alterações, volumes remotos, aliases de caminhos e delegação de credenciais. Revisar o código e homologar com arquivos sintéticos antes de dados reais.
-7. Só após os testes: liberar apenas a porta HTTPS do frontend para sub-redes aprovadas. Everything permanece em **127.0.0.1:8888**, sem proxy genérico e sem rota de download para ele. Backend continua inacessível diretamente pela LAN.
+1. Configure nome/IP estável e obtenha certificado de servidor emitido por uma CA confiável pelos PCs da equipe, incluindo esse nome/IP. Guarde a chave privada apenas no host, com permissões restritas. Não desative validação de certificado nos clientes.
+2. Preserve o .env e configure o modo accounts, bind, origem e TLS. Exemplo fictício:
 
-A versão atual rejeita `NEXUS_MODE` diferente de `admin-local`. A liberação exige implementação adicional; não há variável “permitir LAN” ou bypass de ACL.
+    NEXUS_MODE='accounts'
+    NEXUS_HOST='0.0.0.0'
+    NEXUS_PORT='3443'
+    NEXUS_PUBLIC_ORIGIN='https://nexus.example.internal:3443'
+    NEXUS_TLS_CERT='C:\ExampleCertificates\server-chain.pem'
+    NEXUS_TLS_KEY='C:\ExampleCertificates\server-key.pem'
 
-## Preservação e reversão
+3. Use certificado/cadeia e chave em PEM. A porta da origem deve coincidir com a porta do Nexus. A URL não pode conter credenciais. Ausência de HTTPS impede inicialização no modo accounts.
+4. Reinicie e use a URL configurada também no host local. O próprio Node serve HTTPS; não há frontend HTTP nem proxy reverso. Outro Host/IP/porta será recusado.
+5. Restrinja no firewall a entrada na porta HTTPS escolhida às sub-redes da equipe. Não crie exposição à internet. **Everything continua em 127.0.0.1:8888**, sem entrada na 8888 e sem proxy genérico ou download HTTP.
+6. Entre como admin com a senha preservada e crie contas individuais. Downloads exigem permissão global e individual.
+7. Homologue com duas contas e arquivos sintéticos: nomes, totais, árvore, downloads, revogação durante sessão e persistência após reinício. Confirme que a base de usuários não é acessível pela web.
 
-Instalar em pasta própria. Não modificar Everything além das opções aprovadas de bind/download; não alterar inventário, checkpoints, Onyx, bancos ou índices existentes. Para reverter, encerrar o processo Nexus e remover apenas sua eventual tarefa agendada. Não excluir os dados das raízes. A configuração `.env` fica fora do Git e do pacote de entrega.
+O pacote não contém certificado/chave, não ativa LAN e não modifica firewall. A leitura usa a conta Windows do processo após autorizar a conta Nexus. Se precisar exigir ACL Windows por identidade individual, é necessária outra integração; esse não é o modelo atual.
+
+## Ambiente
+
+- NEXUS_MODE: admin-local por padrão ou accounts com HTTPS.
+- NEXUS_HOST: 127.0.0.1 por padrão; 0.0.0.0 permitido apenas em accounts.
+- NEXUS_PORT: padrão 3000, mínimo 1024, diferente de 8888.
+- EVERYTHING_URL: somente http://127.0.0.1:8888/.
+- NEXUS_ADMIN_HASH: credencial scrypt do administrador, gerada localmente.
+- NEXUS_ROOTS: array JSON de raízes globais com path e unc opcional; concessões individuais devem estar dentro delas.
+- NEXUS_DOWNLOADS: false por padrão; true habilita conforme a conta.
+- NEXUS_USERS_FILE: opcional; padrão data/users.json ao lado do programa.
+- NEXUS_PUBLIC_ORIGIN: origem HTTPS exata com a mesma porta do Nexus no modo accounts.
+- NEXUS_TLS_CERT / NEXUS_TLS_KEY: caminhos de certificado/cadeia e chave privada PEM.
+
+Edite .env e reinicie para aplicar. Preserve as aspas simples externas e o JSON das raízes. As contas usam data/ por padrão, não a pasta de documentos pesquisados.
+
+## Preservação e recuperação
+
+Proteja .env, data/, chave TLS e backups com permissões NTFS. Nunca publique esses arquivos. Corrupção da base impede iniciar; restaure o backup sem apagar a base para contornar o erro.
+
+A autorização Nexus é independente dos compartilhamentos Windows existentes. Inventário, checkpoints, Onyx, índices e bancos não são alterados. Para retornar ao acesso local, encerre, ajuste admin-local/127.0.0.1/porta local e retire a regra de entrada que o administrador criou. Preserve as contas e os arquivos das raízes.
