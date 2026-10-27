@@ -11,9 +11,9 @@ A aplicação é executada diretamente no Windows. Não requer ambiente Linux, c
 
 ## Obter o programa
 
-O [código atual](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-web-1.0/web-v1) está em web-v1, na branch codex/nexus-web-1.0. Se usar Code → Download ZIP no GitHub, selecione essa branch primeiro. Extraia e copie o conteúdo de web-v1 para uma pasta exclusiva de instalação. A pasta de execução é a que contém package.json, server.mjs e scripts/.
+O [código atual](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/main/web-v1) está em web-v1, na branch main. Se usar Code → Download ZIP no GitHub, selecione main. Extraia e copie o conteúdo de web-v1 para uma pasta exclusiva de instalação. A pasta de execução é a que contém package.json, server.mjs e scripts/.
 
-A main contém a documentação atualizada; enquanto o PR #1 estiver aberto, ela não contém o código da aplicação. O ZIP completo de atualização fornecido separadamente tem os arquivos do aplicativo na raiz, sem a camada web-v1.
+A main contém o código e a documentação. O arquivo nexus-search-ai-web-1.1.3.zip do release contém os arquivos do aplicativo diretamente na raiz, sem a camada web-v1. O Source code ZIP gerado pelo GitHub contém o repositório inteiro; nele, entre em web-v1.
 
 ## Primeira instalação
 

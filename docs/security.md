@@ -30,7 +30,7 @@ O arquivo .env.example usa somente valores fictícios ou loopback. Exemplos não
 
 ## Certificado público
 
-O nexus-ca.cer contém o certificado público da autoridade, não sua chave privada. Sua distribuição foi autorizada para facilitar a confiança nos clientes do repositório privado. Antes de anexar, conferir que é somente certificado, sua impressão SHA-256, validade e campos públicos, removendo qualquer material privado do envio. O arquivo real precisa ser obtido do host de operação; um certificado novo ou de teste não autentica a instalação existente.
+O nexus-ca.cer contém o certificado público da autoridade, não sua chave privada. Sua distribuição foi autorizada para facilitar a confiança nos clientes do repositório. Antes de anexar, conferir que é somente certificado, sua impressão SHA-256, validade e campos públicos, removendo qualquer material privado do envio. O arquivo real precisa ser obtido do host de operação; um certificado novo ou de teste não autentica a instalação existente.
 
 Não publicar chave privada nem pasta data inteira. Tratar a origem do certificado como parte da cadeia de confiança: distribuir um arquivo público não autoriza importar certificados desconhecidos. O documento não indica que o certificado real já foi enviado.
 

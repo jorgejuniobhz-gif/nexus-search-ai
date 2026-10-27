@@ -2,7 +2,7 @@
 
 1. Pare o Nexus. Se uma tarefa agendada o mantém ativo, interrompa a tarefa antes de copiar.
 2. Faça backup privado de .env, data/ e caminhos externos de base/certificados configurados.
-3. Extraia o ZIP completo nexus-atualizacao-periodo-1.1.3.zip na pasta que contém package.json e server.mjs, substituindo os arquivos de programa. O pacote completo não tem pasta externa adicional. Se baixar o repositório pelo GitHub, selecione a branch codex/nexus-web-1.0 e use o conteúdo de web-v1.
+3. Extraia o ZIP completo nexus-search-ai-web-1.1.3.zip na pasta que contém package.json e server.mjs, substituindo os arquivos de programa. O pacote completo não tem pasta externa adicional. Se baixar o repositório pelo GitHub, selecione a branch main e use o conteúdo de web-v1.
 4. Preserve .env, data/users.json, data/tls e backups privados. Não execute setup nem setup:https em uma atualização comum.
 5. Na pasta de instalação, execute npm.cmd test. Inicie pelo método já usado: npm.cmd start ou a tarefa agendada, sem abrir duas instâncias.
 6. Acesse sua URL atual e pressione Ctrl+F5. Entre com a mesma conta/senha e confira concessões e downloads.

@@ -40,7 +40,7 @@ Alternativa gráfica: abra o .cer, escolha Instalar Certificado → Usuário Atu
 
 Se houver administração por domínio, a confiança pode ser distribuída por política de grupo. DNS no pfSense resolve o nome; não instala confiança de certificado nos clientes.
 
-O .cer público pode ser distribuído no repositório privado mediante autorização específica. A autorização não transforma chaves ou bases em arquivos publicáveis. A documentação não afirma que o certificado real já foi anexado: ele deve vir do host que serve o Nexus. A chave server-key.pem, .env e data/users.json permanecem privados.
+O .cer público pode ser distribuído no repositório mediante autorização específica. A autorização não transforma chaves ou bases em arquivos publicáveis. A documentação não afirma que o certificado real já foi anexado: ele deve vir do host que serve o Nexus. A chave server-key.pem, .env e data/users.json permanecem privados.
 
 ## Firewall e exposição
 

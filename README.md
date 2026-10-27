@@ -20,9 +20,9 @@ O Everything e o backend executam no mesmo host Windows de processamento. O serv
 
 ## Código e documentação
 
-A documentação principal está na branch main. O código executável está na pasta **web-v1** da branch **codex/nexus-web-1.0**, com integração acompanhada pelo [PR #1](https://github.com/jorgejuniobhz-gif/nexus-search-ai/pull/1). Até essa integração, baixar apenas a main não fornece a aplicação.
+A documentação e o código executável da versão 1.1.3 estão na branch **main**. A aplicação fica na pasta **web-v1**. O [PR #1](https://github.com/jorgejuniobhz-gif/nexus-search-ai/pull/1) foi integrado para a publicação desta versão.
 
-- [Código da aplicação 1.1.3](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-web-1.0/web-v1)
+- [Código da aplicação 1.1.3](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/main/web-v1)
 - [Arquitetura e fluxo de autorização](docs/architecture.md)
 - [Instalação e atualização](docs/installation.md)
 - [Configuração por ambiente](docs/configuration.md)
