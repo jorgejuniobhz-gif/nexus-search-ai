@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nexus-content"
+version = "2.0.0"
+description = "Reusable local page extraction and incremental FTS5 indexing for Nexus and Urbexa"
+requires-python = ">=3.11"
+dependencies = ["PyMuPDF>=1.24,<2", "numpy>=1.24,<3"]
+
+[project.optional-dependencies]
+ocr = ["paddleocr>=2.7,<4"]
+
+[tool.setuptools.packages.find]
+include = ["nexus_content*"]

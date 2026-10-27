@@ -1,0 +1,5 @@
+# Existing Python 3.11 OCR venv may be reused. Install PaddlePaddle CPU separately
+# following its official platform guide; do not replace a working environment.
+PyMuPDF>=1.24,<2
+paddleocr>=2.7,<4
+numpy>=1.24,<3

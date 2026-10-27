@@ -30,7 +30,12 @@ export function config(env=process.env) {
  for(const r of roots) { if(!safePath(r.path)||(r.unc&&(!safePath(r.unc)||!r.unc.startsWith('\\\\')))) throw Error('Raiz inválida.'); r.path=path.win32.normalize(r.path); }
  const port=Number(env.NEXUS_PORT||3000); if(!Number.isInteger(port)||port<1024||port>65535||port===8888) throw Error('Porta inválida.');
  if(publicOrigin&&Number(new URL(publicOrigin).port||443)!==port)throw Error('A porta da origem HTTPS deve ser igual à porta do Nexus.');
- return {port,host,mode,publicOrigin,tls,upstream,roots,hash,downloads:env.NEXUS_DOWNLOADS==='true',usersFile:path.resolve(env.NEXUS_USERS_FILE||fileURLToPath(new URL('./data/users.json',import.meta.url)))};
+ let content=null;
+ if(env.NEXUS_CONTENT_ENABLED==='true'){
+  if(!env.NEXUS_CONTENT_PYTHON||!env.NEXUS_CONTENT_DB||!path.isAbsolute(env.NEXUS_CONTENT_PYTHON)||!path.isAbsolute(env.NEXUS_CONTENT_DB))throw Error('Configure caminhos absolutos do Python e do índice de conteúdo.');
+  content={python:env.NEXUS_CONTENT_PYTHON,db:env.NEXUS_CONTENT_DB};
+ }
+ return {port,host,mode,publicOrigin,tls,upstream,roots,hash,content,downloads:env.NEXUS_DOWNLOADS==='true',usersFile:path.resolve(env.NEXUS_USERS_FILE||fileURLToPath(new URL('./data/users.json',import.meta.url)))};
 }
 export function passwordOK(password,hash) { const [salt,expected]=hash.split(':'); return typeof password==='string'&&password.length<=1024&&timingSafeEqual(scryptSync(password,salt,64),Buffer.from(expected,'hex')); }
 // Calendar days use the Everything host's local timezone.

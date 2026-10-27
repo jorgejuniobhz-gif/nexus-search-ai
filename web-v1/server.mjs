@@ -8,10 +8,11 @@ import { fileURLToPath } from 'node:url';
 import { pipeline } from 'node:stream/promises';
 import { config, passwordOK, searchQuery, normalizeResult, inside, fail } from './core.mjs';
 import { UserStore, ADMIN_ID, accountRoots } from './users.mjs';
+import { contentRequest, contentResults, runContentSearch } from './content.mjs';
 const publicDir=fileURLToPath(new URL('./public/',import.meta.url));
 const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify(data));};
 async function body(req){let text='';for await(const chunk of req){text+=chunk;if(Buffer.byteLength(text)>32768)fail(413,'Requisição grande demais.');}try{return JSON.parse(text);}catch{fail(400,'JSON inválido.');}}
-export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new UserStore()}={}){
+export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new UserStore(),contentSearcher=runContentSearch}={}){
  const sessions=new Map(),attempts=new Map();let inFlight=0;
  const origin=cfg.publicOrigin||`http://127.0.0.1:${cfg.port}`;
  const admin=()=>({id:ADMIN_ID,username:'admin',name:'Administrador',active:true,version:users.admin?.version||1,hash:users.admin?.hash||cfg.hash,downloads:true});
@@ -58,7 +59,7 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new Us
      await users.changePassword(user.id,input.newPassword,user.version);revoke(user.id);
      res.setHeader('Set-Cookie',`nexus=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${cfg.tls?'; Secure':''}`);return json(res,200,{ok:true});
     }
-    if(route==='/api/session'&&req.method==='GET')return json(res,200,{mode:cfg.mode||'admin-local',downloads:canDownload,expires:session.expires,user:{username:user.username,name:user.name,role:isAdmin?'admin':'user'}});
+    if(route==='/api/session'&&req.method==='GET')return json(res,200,{mode:cfg.mode||'admin-local',downloads:canDownload,contentEnabled:Boolean(cfg.content),expires:session.expires,user:{username:user.username,name:user.name,role:isAdmin?'admin':'user'}});
     if(route==='/api/admin/users'||route.startsWith('/api/admin/users/')){
      if(!isAdmin)fail(403,'Somente o administrador pode gerenciar usuários.');
      if(route==='/api/admin/users'&&req.method==='GET')return json(res,200,{users:users.list(),downloadsEnabled:cfg.downloads});
@@ -69,6 +70,19 @@ export function createApp(cfg,{fetcher=fetch,fileAccess=checkedFile,users=new Us
      fail(405,'Método não permitido.');
     }
     if(route==='/api/roots'&&req.method==='GET')return json(res,200,{roots:roots.map(r=>({path:r.path,name:path.win32.basename(r.path)||r.path}))});
+    if(route==='/api/content-search'&&req.method==='GET'){
+     if(!cfg.content)fail(503,'Pesquisa por conteúdo desativada.');
+     if(!roots.length)return json(res,200,{items:[],total:0,offset:0,count:25});
+     const request=contentRequest(url.searchParams,scope);
+     if(inFlight>=3)fail(429,'Há pesquisas em andamento. Tente novamente.');
+     let data;inFlight++;
+     try{data=await contentSearcher(cfg,request);}catch{current(session,token);fail(503,'Pesquisa por conteúdo indisponível.');}finally{inFlight--;}
+     current(session,token);
+     const items=contentResults(data,request,scope);
+     if(session.items.size>1000)session.items.clear();
+     for(const item of items){item.id=randomBytes(18).toString('hex');session.items.set(item.id,item);}
+     return json(res,200,{items,total:data.total,offset:request.offset,count:request.count});
+    }
     if((route==='/api/search'||route==='/api/folders')&&req.method==='GET'){
      const params=new URLSearchParams(url.searchParams);
      if(!roots.length){if(params.get('folder'))fail(403,'Pasta fora do escopo.');return json(res,200,{items:[],total:0,offset:0,count:25});}
