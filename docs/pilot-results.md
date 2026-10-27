@@ -1,4 +1,21 @@
-# Testes e resultados — Web 1.1.3
+# Testes e resultados
+
+## Nexus Search 2.0 — retorno da instalação em 27/10/2026
+
+O responsável confirmou a criação e indexação do PDF sintético (`indexed=1`,
+`errors=0`), busca FTS5 com uma página e trecho esperado, atualização da aplicação
+e pesquisa por conteúdo na interface. Também confirmou que uma conta sem
+permissão para a pasta sintética não recebeu o resultado encontrado pela conta
+autorizada. Configuração, cadastros e permissões existentes foram preservados.
+Não foram utilizados documentos reais de RH nesta validação.
+
+O teste de inferência PaddleOCR com documento digitalizado foi pulado por
+solicitação do responsável; essa capacidade continua não validada no ambiente
+instalado. Esses resultados são relatos de validação manual, separados dos
+testes automatizados. Detalhes, contagens e limites no
+[registro da versão 2.0](content-search-2.0.md).
+
+## Histórico — Web 1.1.3
 
 ## Validação automatizada
 
