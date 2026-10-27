@@ -1,3 +1,5 @@
+> Para a versão 2.0, consulte o [guia de busca por conteúdo e atualização Windows](content-search-2.0.md). As instruções abaixo descrevem a base Everything/contas, que permanece disponível.
+
 # Configuração por ambiente
 
 A configuração real fica no .env da instalação. O [exemplo](../config/.env.example) contém valores fictícios. O comando npm.cmd start carrega esse arquivo; alterações exigem reiniciar o processo. Não substitua o .env existente pelo exemplo durante uma atualização.

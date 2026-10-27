@@ -54,3 +54,7 @@ Abrir no Windows copia o caminho para o usuário colar no Explorador. O navegado
 ## Fronteiras de confiança
 
 As contas são identidades da aplicação, sem integração de identidade Windows por pessoa. A conta Windows do processo precisa apenas das leituras aprovadas e do acesso aos dados locais da aplicação. As permissões do painel controlam o Nexus; as permissões SMB/NTFS controlam o acesso direto ao servidor. Veja [segurança](security.md).
+
+## Conteúdo na versão 2.0
+
+O Node preserva a rota Everything e acrescenta `/api/content-search`. Um processo Python local consulta FTS5 com o escopo de pastas da sessão antes de contar ou paginar. PyMuPDF/PaddleOCR são usados somente pelo indexador separado. [Fluxo, controles, instalação e limites](content-search-2.0.md).

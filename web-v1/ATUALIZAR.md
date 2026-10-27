@@ -1,3 +1,9 @@
+# Atualizar para Nexus Search 2.0
+
+Siga o [guia de atualização 2.0](../docs/content-search-2.0.md). A distribuição agora precisa de `web-v1` e `content-index` lado a lado. Preserve `.env`, `data/`, usuários, permissões, senhas e TLS. Não rode setup novamente. Use índice novo e somente `teste_nexus.pdf` sintético nesta implantação.
+
+O procedimento abaixo é histórico da versão 1.1.3 e não descreve a instalação do componente Python.
+
 # Atualizar o Nexus Web 1.1.3
 
 1. Pare o Nexus. Se uma tarefa agendada o mantém ativo, interrompa a tarefa antes de copiar.

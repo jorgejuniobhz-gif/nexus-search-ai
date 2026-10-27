@@ -15,6 +15,12 @@ volumes/
 logs/
 *.log
 *.sqlite
+*.sqlite-*
+*.db-*
+.nexus-test-*/
+*.egg-info/
+build/
+dist/
 *.db
 *.pdf
 *.docx

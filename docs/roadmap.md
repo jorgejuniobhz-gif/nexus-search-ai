@@ -1,3 +1,5 @@
+> Para a versão 2.0, consulte o [guia de busca por conteúdo e atualização Windows](content-search-2.0.md). As instruções abaixo descrevem a base Everything/contas, que permanece disponível.
+
 # Evolução do Nexus Web
 
 ## Entregue na versão 1.1.3

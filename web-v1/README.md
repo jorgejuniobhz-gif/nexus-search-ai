@@ -1,6 +1,8 @@
 # Nexus Search AI Web
 
-Interface web para a equipe localizar arquivos e pastas do servidor por **nome e caminho**, usando o índice do Everything 1.4.1. A versão documentada é a **1.1.3**, com contas individuais, permissões de pastas, árvore de navegação, download controlado e filtro por período de modificação.
+Nexus Search **2.0** preserva a busca Everything/Node por nome e caminho e acrescenta busca local no conteúdo de PDFs e imagens. Mantém contas, permissões por pasta, árvore, downloads e período de modificação. O componente Python usa PyMuPDF/PaddleOCR e SQLite FTS5, com trechos e páginas apenas das pastas autorizadas. Conteúdo vem desativado por padrão.
+
+Guia principal: [conteúdo 2.0, atualização Windows, testes e reutilização pelo Urbexa](../docs/content-search-2.0.md). Nesta implantação, indexe apenas `teste_nexus.pdf` sintético; não varra o piloto de RH nem importe seu índice.
 
 ## Arquitetura em uso
 
@@ -12,17 +14,18 @@ Backend Nexus (Node.js no Windows)
         |-- sessão, permissões e validação dos filtros
         |-- HTTP JSON em 127.0.0.1:8888 --> Everything 1.4.1
         |                                  índice de nomes/caminhos/datas
+        |-- processo Python local --> SQLite FTS5 (páginas autorizadas)
         |-- resultados e totais das pastas autorizadas --> navegador
         '-- download autorizado --> leitura do arquivo no disco/SMB
 ~~~
 
-O Everything e o backend executam no mesmo host Windows de processamento. O servidor de arquivos fornece o compartilhamento. A equipe acessa somente o Nexus; a porta 8888 permanece no loopback. A pesquisa usa metadados: não lê o conteúdo dos documentos para produzir respostas.
+O Everything e o backend executam no mesmo host Windows de processamento. O servidor de arquivos fornece o compartilhamento. A equipe acessa somente o Nexus; a porta 8888 permanece no loopback. O modo nomes/caminhos usa metadados do Everything; o modo conteúdo consulta o índice local de páginas extraídas pelo Python.
 
 ## Código e documentação
 
-A documentação principal está na branch main. O código executável está na pasta **web-v1** da branch **codex/nexus-web-1.0**, com integração acompanhada pelo [PR #1](https://github.com/jorgejuniobhz-gif/nexus-search-ai/pull/1). Até essa integração, baixar apenas a main não fornece a aplicação.
+A implementação 2.0 está na branch **codex/nexus-search-2.0**, derivada de **codex/nexus-web-1.0**. Baixe o repositório completo: **web-v1** e **content-index** devem ser pastas irmãs. Preserve `.env`, `data/`, usuários, senhas e certificados existentes; não execute os assistentes de configuração novamente.
 
-- [Código da aplicação 1.1.3](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-web-1.0/web-v1)
+- [Código da aplicação 2.0](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-search-2.0/web-v1)
 - [Arquitetura e fluxo de autorização](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/architecture.md)
 - [Instalação e atualização](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/installation.md)
 - [Configuração por ambiente](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/configuration.md)
@@ -70,4 +73,4 @@ Arquivos, credenciais, contas, chaves privadas e configurações reais ficam for
 
 ## Estado da validação
 
-Suite da versão 1.1.3: 18 verificações aprovadas, nenhuma falha e 1 subteste de junction ignorado por restrição do ambiente. A interface foi conferida com dados fictícios; o responsável pela instalação relatou funcionamento nos testes locais. Esse relato não representa certificação de todos os cenários de acesso, concorrência ou recuperação. Veja os [resultados e limites](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/pilot-results.md).
+Validação 2.0: suíte Node existente e nova integração Python/SQLite; testes Python geram PDFs/imagens fictícios e cobrem extração, índice incremental e isolamento de páginas/totais. A inferência PaddleOCR real depende dos modelos locais e ainda requer validação no venv existente com o sintético. Veja o guia 2.0 para comandos e limites. O relato piloto a seguir é histórico da versão anterior. Veja os [resultados e limites](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/pilot-results.md).

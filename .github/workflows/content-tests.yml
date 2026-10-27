@@ -1,0 +1,28 @@
+name: Nexus 2.0 synthetic tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  synthetic:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Synthetic extraction dependencies
+        run: python -m pip install "PyMuPDF>=1.24,<2" "numpy>=1.24,<3"
+      - name: Python incremental index and extraction
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = "$PWD/content-index"
+          python -m unittest discover -s content-index/tests -v
+      - name: Existing application and real Python worker
+        working-directory: web-v1
+        shell: pwsh
+        run: |
+          $env:NEXUS_TEST_PYTHON = (Get-Command python).Source
+          node --test
