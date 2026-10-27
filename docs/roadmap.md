@@ -1,48 +1,32 @@
-# Roadmap — Nexus Search AI
+# Evolução do Nexus Web
 
-## Fase 1 — Prova de conceito local
+## Entregue na versão 1.1.3
 
-- [x] Ubuntu WSL2 instalado
-- [x] Docker Desktop e Compose validados
-- [x] Onyx Standard v4.9.4 inicializado e interface web acessível
-- [x] Ollama local e conexão OpenAI-Compatible
-- [x] Agente Nexus com instruções de pesquisa documental
-- [x] Conector File com dois arquivos fictícios
-- [x] Recuperação do documento e resposta com indicação de fonte
-- [ ] Benchmark reproduzível de latência total (busca, modelo e resposta)
-- [ ] Teste de informação inexistente e manejo de incerteza
-- [ ] Confirmar configuração persistente, recuperação e backup
+- [x] Pesquisa de nomes/caminhos por API JSON do Everything local.
+- [x] Autenticação, contas próprias e autorização por pasta no backend.
+- [x] Gestão administrativa, redefinição e troca própria de senha.
+- [x] Árvore de pastas, migalhas, UNC e orientação de abertura do original.
+- [x] Filtros de categoria/extensão, arquivo/pasta e período de modificação.
+- [x] Totais, paginação, carregamento e tratamento de erros.
+- [x] Download opcional com autorização global/individual e rechecagem de leitura.
+- [x] HTTPS opcional para LAN, origem exata e assistente local de certificado.
+- [x] Guias de DNS/DHCP, confiança, atualização, backup e inicialização automática.
 
-## Fase 2 — Desempenho
+## Verificações operacionais pendentes de evidência completa
 
-- [ ] Medir consulta direta ao índice, sem agente
-- [ ] Registrar latência e taxa de acerto com 2, 10, 100 e 1.000 arquivos sintéticos
-- [ ] Aferir limites de memória do Docker/WSL2 e uso de GPU/CPU do Ollama
-- [ ] Reduzir chamadas auxiliares e avaliar desativação de thinking em buscas objetivas
-- [ ] Comparar `qwen3:1.7b` e `qwen3.5:4b` no mesmo conjunto de perguntas
-- [ ] Monitorar erros em filtros de data, seleção de documentos/contexto e streaming
-- [ ] Avaliar resultados sob uso simultâneo controlado
+- [ ] Homologar todos os limites de período e atualização do índice no Everything do host.
+- [ ] Repetir a fixture de junction em ambiente Windows autorizado.
+- [ ] Documentar teste completo de reinício com API, conta Windows e clientes.
+- [ ] Testar restauração consistente de configuração, usuários e certificados.
+- [ ] Medir latência, erros e concorrência na rede com arquivos autorizados.
+- [ ] Conferir concessões com o responsável pelas informações e revisar permissões SMB/NTFS separadamente.
 
-## Fase 3 — OCR e formatos
+## Melhorias a avaliar
 
-- [ ] Testar PDF digital, PDF escaneado, DOCX, XLSX e imagens
-- [ ] Extrair texto nativo quando existir; aplicar OCR apenas quando necessário
-- [ ] Avaliar Tesseract e outras alternativas em documentos autorizados
-- [ ] Medir qualidade do reconhecimento e citar origem/página quando disponível
-- [ ] Não modificar arquivos originais
+- Indicadores de saúde e aviso de vencimento de certificado.
+- Processo assistido de renovação e distribuição de confiança.
+- Auditoria de eventos administrativos sem registrar conteúdo confidencial.
+- Favoritos ou filtros salvos, mediante necessidade da equipe.
+- Integração de identidade corporativa, se houver requisito futuro.
 
-## Fase 4 — Rede e acesso (pequena equipe)
-
-- [ ] Definir uma pasta-piloto aprovada para todos os participantes
-- [ ] Selecionar ingestão SMB somente leitura, com controle de credenciais
-- [ ] Testar criação, alteração e exclusão de arquivos e efeitos na indexação
-- [ ] Validar autenticação e segregação por usuário; não assumir herança de ACLs
-- [ ] Revisar exposição de portas, políticas de backup e atualizações
-- [ ] Testar aproximadamente dez usuários, inclusive buscas concorrentes
-
-## Fase 5 — Evolução
-
-- [ ] Expandir gradualmente o escopo documental, com governança
-- [ ] Coletar feedback sobre resultados e latência sem registrar conteúdo sensível
-- [ ] Documentar decisões de modelos, versões, conectores e retenção
-- [ ] Avaliar publicação do repositório somente após auditoria de segurança
+Essas melhorias não estão implementadas nem são pré-requisitos ocultos do pacote atual. A evolução mantém o foco em localizar arquivos e navegar no acervo com controle de acesso.

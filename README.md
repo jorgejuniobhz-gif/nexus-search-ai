@@ -1,57 +1,73 @@
-# Nexus Search AI
+# Nexus Search AI Web
 
-**Busca inteligente de documentos locais, com IA, recuperação de fontes e OCR planejado.**
+Interface web para a equipe localizar arquivos e pastas do servidor por **nome e caminho**, usando o índice do Everything 1.4.1. A versão documentada é a **1.1.3**, com contas individuais, permissões de pastas, árvore de navegação, download controlado e filtro por período de modificação.
 
-Laboratório independente baseado em [Onyx Standard](https://github.com/onyx-dot-app/onyx), executado em Docker Desktop + Ubuntu WSL2, com modelos locais servidos pelo Ollama.
+## Arquitetura em uso
 
-> **Status em 23/10/2026: prova de conceito de busca documental funcional.** O agente consultou dois documentos sintéticos, recuperou informações corretas e apresentou os nomes dos arquivos-fonte. O desempenho ainda é instável; OCR, integração com compartilhamentos de rede e acesso multiusuário **não estão homologados**.
+~~~text
+Navegador da equipe
+        | HTTPS + login Nexus
+        v
+Backend Nexus (Node.js no Windows)
+        |-- sessão, permissões e validação dos filtros
+        |-- HTTP JSON em 127.0.0.1:8888 --> Everything 1.4.1
+        |                                  índice de nomes/caminhos/datas
+        |-- resultados e totais das pastas autorizadas --> navegador
+        '-- download autorizado --> leitura do arquivo no disco/SMB
+~~~
 
-## Arquitetura resumida
+O Everything e o backend executam no mesmo host Windows de processamento. O servidor de arquivos fornece o compartilhamento. A equipe acessa somente o Nexus; a porta 8888 permanece no loopback. A pesquisa usa metadados: não lê o conteúdo dos documentos para produzir respostas.
 
-```text
-Arquivos aprovados -> Conector de ingestão -> Índice Onyx Standard
-                                                |
-Navegador -> Agente Nexus -> Busca interna/RAG -> Ollama local
-                                                |
-                                     Resposta com fonte
-```
+## Código e documentação
 
-A aplicação roda em um computador de processamento **separado** do servidor de arquivos. O servidor de origem não requer instalação de Onyx e não deve ser alterado. A ingestão futura da rede precisa ser validada **somente leitura**.
+A documentação principal está na branch main. O código executável está na pasta **web-v1** da branch **codex/nexus-web-1.0**, com integração acompanhada pelo [PR #1](https://github.com/jorgejuniobhz-gif/nexus-search-ai/pull/1). Até essa integração, baixar apenas a main não fornece a aplicação.
 
-## Marcos validados
-
-- [x] Ubuntu no WSL2 e Docker Desktop integrados
-- [x] Onyx Standard v4.9.4 inicializado e interface disponível no navegador
-- [x] Ollama local, com `qwen3:1.7b`, `gemma3:1b` e `qwen3.5:4b` baixados
-- [x] Conexão **OpenAI-Compatible** do Onyx ao Ollama validada com Qwen3 1.7B
-- [x] Agente **Nexus — Pesquisa Documental** criado e testado em português
-- [x] Conector de arquivos com dois documentos **sintéticos** indexados
-- [x] Respostas corretas com referência aos arquivos de teste
-- [ ] Otimizar busca e chamadas auxiliares de IA (timeout de até vários minutos observado)
-- [ ] OCR de PDFs digitalizados e imagens
-- [ ] Ingestão somente leitura de um compartilhamento de rede
-- [ ] Controle de acesso validado para usuários diferentes
-- [ ] Configuração durável e monitoramento operacional
-
-## Documentação
-
-- [Arquitetura](docs/architecture.md)
-- [Instalação e diário técnico](docs/installation.md)
-- [Integração Onyx + Ollama e incidentes](docs/onyx-ollama-troubleshooting.md)
-- [Piloto documental e resultados](docs/pilot-results.md)
-- [Plano de evolução](docs/roadmap.md)
+- [Código da aplicação 1.1.3](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-web-1.0/web-v1)
+- [Arquitetura e fluxo de autorização](docs/architecture.md)
+- [Instalação e atualização](docs/installation.md)
+- [Configuração por ambiente](docs/configuration.md)
+- [DNS, DHCP, pfSense e HTTPS](docs/network.md)
+- [Contas, pastas e senhas](docs/users.md)
+- [Inicialização automática, backup e manutenção](docs/operations.md)
+- [Diagnóstico de problemas](docs/troubleshooting.md)
 - [Segurança e privacidade](docs/security.md)
+- [Testes e resultados](docs/pilot-results.md)
+- [Evolução do produto](docs/roadmap.md)
 
-## Limites e princípios
+## Recursos disponíveis
 
-- **Busca com fonte:** resposta correta sem nova recuperação não comprova pesquisa.
-- **Desempenho:** distinguir tempo de thinking, tempo da busca e latência total.
-- **Privacidade:** processar dados aprovados localmente, sem publicar conteúdo ou logs reais.
-- **Acesso:** não presumir que um índice compartilhado respeita automaticamente ACLs SMB/NTFS.
-- **Manutenção:** alterações dentro de contêineres são temporárias e podem sumir ao recriá-los.
+- Pesquisa literal com debounce, carregamento, erros e resultados vazios.
+- Árvore por nível e navegação por pastas, com migalhas derivadas do caminho.
+- Filtros por categoria/extensão, arquivo/pasta e período de última modificação.
+- Datas de início e fim opcionais; o dia final é incluído inteiro.
+- Totais autorizados e paginação de 25, 50 ou 100 resultados.
+- Cópia de caminho UNC e orientação para abrir o original pelo Explorador do Windows.
+- Login, painel administrativo, concessões por pasta, ativação/desativação e senhas.
+- Download opcional, condicionado às permissões e à leitura do arquivo no backend.
+- HTTPS na LAN com certificado confiável e origem configurada.
 
-Este repositório documenta implantação, testes e decisões: **não é um fork do Onyx**. Consulte a [documentação oficial](https://docs.onyx.app/deployment/overview) para instruções atualizadas e licenças aplicáveis.
+## Uso e requisitos
 
-## Publicação
+Windows, Node.js 24+ e Everything 1.4.1 com API JSON local funcional. Não há dependências npm externas. Instale na máquina que hospeda a API do Everything, executando com uma conta Windows autorizada a ler as pastas.
 
-O projeto permanece privado durante o laboratório. Antes de publicá-lo, auditar histórico de commits, documentação, issues e anexos para evitar credenciais, identificadores, caminhos internos ou arquivos de terceiros.
+Na primeira instalação, dentro de web-v1:
+
+~~~cmd
+npm.cmd run setup
+npm.cmd test
+npm.cmd start
+~~~
+
+O setup gera a senha inicial do login admin uma única vez. O padrão local é http://127.0.0.1:3000. Para a equipe, configure HTTPS conforme o [guia de rede](docs/network.md); com o nome nexus, a URL preparada pelo assistente é https://nexus:3443.
+
+Em atualizações, preserve .env e data/ e não repita os assistentes. A configuração da LAN existente também deve ser preservada.
+
+## Limites do modelo de acesso
+
+As permissões Nexus são verificadas no servidor. Elas não alteram nem reproduzem as permissões individuais do Windows/SMB. Downloads usam a conta Windows do processo após autorizar a conta Nexus. Acesso direto ao compartilhamento continua obedecendo às permissões do servidor de arquivos.
+
+Arquivos, credenciais, contas, chaves privadas e configurações reais ficam fora do repositório. O certificado público da autoridade local pode ser distribuído separadamente, após conferência de origem e impressão digital. As instruções usam exemplos genéricos.
+
+## Estado da validação
+
+Suite da versão 1.1.3: 18 verificações aprovadas, nenhuma falha e 1 subteste de junction ignorado por restrição do ambiente. A interface foi conferida com dados fictícios; o responsável pela instalação relatou funcionamento nos testes locais. Esse relato não representa certificação de todos os cenários de acesso, concorrência ou recuperação. Veja os [resultados e limites](docs/pilot-results.md).

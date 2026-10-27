@@ -1,57 +1,65 @@
-# Diário de instalação — Onyx Standard
+# Instalação e atualização
 
-Registro sanitizado da implantação em **23/10/2026**. Não é um instalador automático nem um procedimento validado para produção.
+## Requisitos
 
-## Ambiente
+- Windows no host de processamento, Node.js 24+ e Everything 1.4.1.
+- API JSON funcional no próprio host em http://127.0.0.1:8888/?search=teste&json=1.
+- Pastas aprovadas presentes no índice, com caminhos locais ou UNC conhecidos.
+- Conta Windows do processo com leitura nas origens e permissão de gravação nos dados locais do Nexus.
 
-- Windows 11, Ubuntu WSL2, Docker Desktop com integração à distribuição Ubuntu.
-- CPU Intel i5-10400F (6 núcleos/12 threads), aproximadamente 16 GB RAM, GTX 1650 (4 GB VRAM), disco com espaço livre suficiente.
-- Docker CLI 29.9.2 e Compose v5.6.1.
-- Ollama **no Windows**, Onyx **em contêineres Docker**. Host de processamento separado do servidor que guarda os documentos.
+A aplicação é executada diretamente no Windows. Não requer ambiente Linux, contêiner ou serviço de inferência. Não há pacotes npm externos para instalar.
 
-## Implantação observada
+## Obter o programa
 
-1. WSL2/Ubuntu inicializado; usuário Linux configurado.
-2. Docker Desktop instalado e integração WSL ativada.
-3. Erro inicial de permissão ao acessar socket resolvido adicionando o usuário Linux ao grupo `docker` e abrindo **nova sessão**.
-4. `docker run --rm hello-world` concluiu.
-5. Instalador Onyx **v1.4.4**, modo **Standard**, imagens/serviços **v4.9.4**.
-6. Instalador confirmou `Onyx is ready` e interface em `http://localhost:3000`.
-7. Conta administrativa criada no primeiro cadastro; agente e modelos configurados posteriormente.
+O [código atual](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-web-1.0/web-v1) está em web-v1, na branch codex/nexus-web-1.0. Se usar Code → Download ZIP no GitHub, selecione essa branch primeiro. Extraia e copie o conteúdo de web-v1 para uma pasta exclusiva de instalação. A pasta de execução é a que contém package.json, server.mjs e scripts/.
 
-Instalador oficial (revisar antes de executar):
+A main contém a documentação atualizada; enquanto o PR #1 estiver aberto, ela não contém o código da aplicação. O ZIP completo de atualização fornecido separadamente tem os arquivos do aplicativo na raiz, sem a camada web-v1.
 
-```bash
-curl -fsSL https://onyx.app/install_onyx.sh -o /tmp/install_onyx.sh
-less /tmp/install_onyx.sh
-bash /tmp/install_onyx.sh
-```
+## Primeira instalação
 
-Configuração gerada sob `$HOME/.config/onyx`: **nunca versionar os arquivos reais de configuração e segredos**.
+No Prompt de Comando ou PowerShell, entre na pasta do programa e execute:
 
-## Ollama — configuração funcional
+~~~cmd
+npm.cmd run setup
+~~~
 
-A URL vista a partir do Docker usa `host.docker.internal`, não `localhost`:
+Informe uma raiz Windows aprovada, em caminho absoluto, e o UNC correspondente se desejar mapear um caminho local para apresentação na interface. Exemplos fictícios: C:\ExampleData e \\example-server\example-share. Se o índice usa UNC diretamente, cadastre a mesma raiz UNC. O assistente cria .env e exibe uma senha aleatória uma única vez; guarde-a em local privado. Se .env já existe, o assistente não substitui a configuração e não revela a senha anterior.
 
-- API nativa: `http://host.docker.internal:11434`
-- API OpenAI-compatible: `http://host.docker.internal:11434/v1`
+Depois:
 
-Teste HTTP a partir do próprio contêiner de API foi bem-sucedido (`GET /api/tags` retornou **200**). Testes de geração direta e streaming também funcionaram.
+~~~cmd
+npm.cmd test
+npm.cmd start
+~~~
 
-O provedor **Ollama nativo** do Onyx passou no cadastro após uma alteração temporária, mas o **chat falhou**. A integração que permitiu conversar foi **OpenAI-Compatible** apontando para `/v1`, usando `qwen3:1.7b`. Uma chave local fictícia foi utilizada como requisito de compatibilidade no formulário; não se deve usar credenciais reais em documentação.
+Acesse http://127.0.0.1:3000 no próprio host e entre com admin e a senha gerada. Esse é o modo local inicial. O programa deve ser executado no diretório que contém .env, pois npm.cmd start usa --env-file=.env.
 
-`gemma3:1b` foi rejeitado nesse fluxo de chat devido a ausência de suporte a ferramentas informado na validação. `qwen3.5:4b` foi baixado para benchmark, sem conclusão de superioridade ou latência.
+## Preparar a equipe
 
-## Importante: correção temporária
+Siga o [guia de rede e HTTPS](network.md). A LAN usa modo accounts, origem HTTPS exata, certificado confiável e firewall limitado à rede aprovada. A porta 8888 continua exclusiva do loopback. Depois, cadastre as contas e concessões em [Usuários](users.md).
 
-No código embarcado do Onyx v4.9.4 foi observado `LLM_PROBE_TIMEOUT_S = 10` em `/app/onyx/llm/utils.py`. O Gemma demorou **15,38 s** em teste direto, enquanto a validação expirava após cerca de **10 s**.
+## Atualizar uma instalação existente
 
-Foi feita **alteração manual dentro do contêiner** para `60` segundos e reinício da API. Isso permitiu o cadastro do provedor nativo, **mas não corrigiu o chat**. A mudança **não é persistente** se o contêiner for recriado; não deve ser apresentada como solução definitiva.
+1. Encerre o processo do Nexus. Se houver tarefa agendada, interrompa-a para evitar reinício durante a cópia.
+2. Faça backup privado da instalação, especialmente .env e data/.
+3. Substitua os arquivos do programa pelo conteúdo atualizado de web-v1 ou do ZIP completo. Preserve .env, data/ e eventuais caminhos externos de base/certificados configurados.
+4. Não execute setup nem setup:https novamente em uma atualização comum.
+5. Execute npm.cmd test e inicie pelo método existente. Reative a tarefa agendada se tiver sido interrompida.
+6. Atualize o navegador com Ctrl+F5 e teste uma conta administrativa e uma comum.
 
-A configuração de chat tem um limite padrão separado `LLM_SOCKET_READ_TIMEOUT = 60` (variável de ambiente), e os logs de busca apontaram timeouts de geração auxiliares. **Não aumentar esse valor indiscriminadamente**.
+A versão 1.1.3 acrescenta o período e preserva usuários, senhas, concessões, download, origem HTTPS e certificados existentes. Não é necessário gerar nova autoridade para atualizar o filtro.
 
-Veja [diagnóstico e caminho funcional](onyx-ollama-troubleshooting.md).
+## Arquivos locais
 
-## Estado atual
+| Arquivo | Uso |
+| --- | --- |
+| .env | Host, porta, origem HTTPS, raízes, segredo inicial e opções |
+| data/users.json | Contas, concessões e hash administrativo atualizado, quando houver |
+| data/tls/ | Chave do servidor, certificado e certificado público da autoridade |
+| .env.before-https-* | Backup local criado pelo assistente HTTPS |
 
-Onyx acessível e agente respondendo com documentos de teste; desempenho de buscas complexas ou com mais chamadas à IA requer otimização. Ainda **não** há servidor de arquivos conectado, controle de ACL homologado, OCR em produção nem teste com dez sessões simultâneas.
+O caminho de data/users.json pode ser alterado por NEXUS_USERS_FILE. Certificados também podem apontar para caminhos externos no .env. O [exemplo de configuração](../config/.env.example) é fictício; mantenha os arquivos reais fora do GitHub.
+
+## Reversão
+
+Encerre o processo, restaure a versão anterior dos arquivos do programa e mantenha os dados locais protegidos. Restaure .env apenas se a alteração exigir; uma atualização de interface não exige voltar configurações de rede. Confirme compatibilidade dos dados antes de restaurar um backup antigo e iniciar o serviço.
