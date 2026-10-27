@@ -149,11 +149,37 @@ escopo, filtros e links; PDFs reais sintéticos exercitam texto, raster e págin
 mista com OCR injetado. Os adaptadores PaddleOCR 2/3 têm respostas simuladas.
 Os testes Node preservam os casos anteriores e acrescentam isolamento, erros,
 revogação em voo e um processo Python/SQLite real. CI Windows/Python 3.11
-reproduz esses testes sem baixar modelos OCR. A inferência dos modelos Paddle
-e o ambiente OCR existente do usuário precisam de validação local com o sintético;
-não foram substituídos nem acessados por esta sessão.
+reproduz esses testes sem baixar modelos OCR. A extração nativa e a busca FTS5 no ambiente Python existente foram validadas
+manualmente pelo responsável com o PDF sintético, conforme o registro abaixo.
+A inferência PaddleOCR real não foi executada; o responsável optou por pular
+o teste digitalizado nesta etapa.
 
 Resultado local em Windows nesta implementação: **22 testes Node aprovados**
 (incluindo processo Python/FTS5 real e bloqueio de junction), **7 testes Python
 aprovados e 1 pulado** por falta de privilégio para criar symlink. O caminho de
 reparse point também foi exercitado com atributo simulado e junction real.
+
+## Validação manual informada em 27/10/2026
+
+O responsável pela instalação confirmou os seguintes resultados no Windows:
+
+- Criação explícita de `teste_nexus.pdf` com texto inteiramente fictício.
+- Indexação com `indexed=1`, `unchanged=0`, `errors=0` e `removed=0`.
+- Busca local por `vistoria`: `total=1`, página 1 e trecho sintético esperado.
+- Atualização do backend e interface, inicialização e busca por conteúdo na web.
+- Conta autorizada encontrou o sintético; uma conta sem acesso à pasta sintética
+  não recebeu o resultado. Nenhum nome de pessoa foi registrado aqui.
+
+A instalação existente usava arquivos Node diretamente na pasta principal.
+Foram preservados configuração, dados e usuários; os arquivos de programa foram
+copiados de `web-v1` após backup. Como `content-index` ficou dentro da pasta
+principal, o caminho relativo `worker` em `content.mjs` foi ajustado localmente
+de `../content-index/` para `./content-index/`. Esse ajuste se aplica somente
+à distribuição plana; o layout padrão com pastas irmãs mantém o caminho original.
+
+São resultados relatados pelo responsável, não uma nova execução automatizada
+ou auditoria de todas as contas. Não foram indexados documentos reais de RH.
+Por solicitação explícita do responsável, o teste de inferência PaddleOCR com
+uma página digitalizada sintética foi **pulado**. OCR digitalizado permanece
+**não validado no ambiente instalado**; o sucesso da extração de texto nativo
+não comprova a inferência OCR. Não foi feita nova varredura do acervo.
