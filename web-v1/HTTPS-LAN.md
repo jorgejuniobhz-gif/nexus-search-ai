@@ -1,57 +1,59 @@
-# HTTPS na LAN com o nome Nexus
+# Rede local, DNS e HTTPS
 
-Use este assistente no Windows que já executa o Nexus e o Everything. Ele é opcional e requer Node.js 24+. Não execute novamente o setup de usuário/senha.
+## Endereço e nome estáveis
 
-## No host
+Reserve no DHCP o endereço do host que executa Nexus/Everything, usando o MAC da placa Ethernet correta. No pfSense com backend ISC, o mapeamento estático precisa ficar fora dos pools dinâmicos. Confira a disponibilidade do endereço e salve/aplique a configuração. Uma reserva DHCP pressupõe que o Windows esteja configurado para obter endereço automaticamente.
 
-1. Encerre o Nexus com Ctrl+C. Faça uma cópia privada de .env e data/. Extraia a atualização completa preservando esses arquivos.
-2. Na pasta do programa:
+No pfSense, em Services → DNS Resolver → Host Overrides, cadastre o host nexus, o domínio local usado pelo DHCP e o endereço reservado do host. Salve e aplique. Os clientes precisam consultar um DNS que resolva esse cadastro e receber o sufixo de pesquisa adequado para usar o nome curto. Em redes com DNS corporativo, mantenha o desenho de DNS existente e cadastre o nome nele.
 
-    npm.cmd run setup:https -- --name nexus
+Use os valores reais somente no ambiente local. O repositório não contém o endereço, MAC, hostname físico ou domínio específico da instalação. Não é necessário editar hosts em cada PC quando a resolução DNS central funciona.
 
-O assistente cria certificado e chave do servidor em data/tls, protege essa pasta para a conta Windows atual, SYSTEM e administradores, faz backup do .env e configura accounts/HTTPS/3443. Não muda contas, senhas, raízes nem downloads. Não instala certificados no Windows, não altera hosts/firewall, não abre listener e não cria serviço.
+A URL precisa usar o nome exato de NEXUS_PUBLIC_ORIGIN e do certificado. Com o assistente configurado para nexus, use https://nexus:3443. A resolução de nexus por um sufixo DNS não acrescenta automaticamente o nome completo ao certificado. Acesso pelo IP ou por um nome diferente pode ser recusado pelo certificado e pelo backend.
 
-O certificado do servidor vale por 1 ano; a data é exibida. A autoridade local vale por 5 anos. Sua chave de assinatura só existe durante a geração e não é salva. O assistente reutiliza certificados válidos existentes e recusa substituir material inválido, de outro nome ou próximo de vencer. Planeje renovação e redistribuição de confiança antes do vencimento.
+## Preparar HTTPS pela primeira vez
 
-3. Confie na autoridade local gerada por este host, no perfil Windows que usará o navegador:
+Na pasta da instalação já configurada, com o Nexus parado:
 
-    certutil -user -addstore Root C:\Nexus\data\tls\nexus-ca.cer
+~~~cmd
+npm.cmd run setup:https -- --name nexus
+~~~
 
-Esse comando instala confiança na autoridade privada do Nexus para o usuário Windows atual. Confirme a origem e a impressão SHA-256 exibida pelo assistente; não importe certificados obtidos de fontes desconhecidas. Não desative a validação HTTPS nem ignore avisos do navegador.
+O assistente gera material TLS local, protege a pasta no Windows, faz backup do .env e prepara accounts/0.0.0.0/3443 com a origem https://nexus:3443. Preserva contas, concessões e opção de download. Ele não instala confiança nos clientes, não abre firewall nem cria serviço ou tarefa de inicialização.
 
-4. No PowerShell como administrador, libere apenas o HTTPS para a rede local:
+A autoridade local vale por 5 anos e o certificado de servidor por 1 ano. A chave de assinatura da autoridade só existe durante a geração e não é salva. O assistente reutiliza material válido e recusa substituição quando inválido, de outro nome ou próximo do vencimento. Ele não renova automaticamente. Planeje a substituição e a redistribuição de confiança antes do vencimento.
 
-    New-NetFirewallRule -DisplayName "Nexus HTTPS LAN" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3443 -RemoteAddress LocalSubnet -Profile Private,Domain
+Pode-se usar certificado emitido pela infraestrutura da rede em vez do assistente. Nesse caso, configure NEXUS_TLS_CERT, NEXUS_TLS_KEY e NEXUS_PUBLIC_ORIGIN; certifique-se de que nome, cadeia e porta sejam coerentes.
 
-A regra corresponde a perfis de rede Privado/Domínio. Se a Ethernet estiver como Pública, valide o perfil adequado antes de mudar a classificação da rede ou a regra. Não crie regra para 8888.
+## Confiança nos computadores
 
-5. Na pasta do programa:
+Copie somente o certificado público nexus-ca.cer da instalação de origem, normalmente em data/tls, por um canal interno confiável. Confira sua procedência e impressão SHA-256. Não copie a pasta inteira e não gere outra autoridade em cada cliente.
 
-    npm.cmd start
+Para o usuário Windows que abrirá o navegador:
 
-Acesse https://nexus:3443 usando exatamente esse nome. O nome deve resolver para o host por DNS local ou hosts. Reserve o IP no DHCP para ele não mudar. A porta 8888 do Everything deve continuar exclusivamente em 127.0.0.1; o assistente não altera Everything.
+~~~cmd
+certutil -user -addstore Root CAMINHO-DO-ARQUIVO\nexus-ca.cer
+~~~
 
-## Em cada computador do colaborador
+Substitua CAMINHO-DO-ARQUIVO pela pasta onde salvou o certificado. Esse comando afeta o perfil Windows atual, não todos os usuários do computador.
 
-- Configure nexus no DNS da rede ou no hosts, apontando para o host real.
-- Copie somente o arquivo público nexus-ca.cer gerado pelo host, por um canal interno confiável. Não copie .env, a base de usuários nem server-key.pem.
-- Importe esse arquivo no usuário Windows que abrirá o navegador:
+Alternativa gráfica: abra o .cer, escolha Instalar Certificado → Usuário Atual → Colocar todos os certificados no repositório a seguir → Autoridades de Certificação Raiz Confiáveis → Concluir. Confirme apenas a autoridade conferida. Feche e reabra o navegador.
 
-    certutil -user -addstore Root CAMINHO-DO-ARQUIVO\nexus-ca.cer
+Se houver administração por domínio, a confiança pode ser distribuída por política de grupo. DNS no pfSense resolve o nome; não instala confiança de certificado nos clientes.
 
-- Feche e reabra o navegador e acesse https://nexus:3443.
-- Entre com a conta Nexus criada pelo administrador. Contas continuam limitadas às pastas e downloads concedidos.
-- Se o navegador não aceitar a cadeia, pare e confira o nome, a data, a impressão e o perfil Windows em que a confiança foi instalada. A homologação no Windows e navegadores reais continua necessária.
+O .cer público pode ser distribuído no repositório privado mediante autorização específica. A autorização não transforma chaves ou bases em arquivos publicáveis. A documentação não afirma que o certificado real já foi anexado: ele deve vir do host que serve o Nexus. A chave server-key.pem, .env e data/users.json permanecem privados.
 
-## Inicialização e recuperação
+## Firewall e exposição
 
-A ação do Agendador de Tarefas continua sendo node.exe com argumentos --env-file=.env server.mjs e diretório do programa. O mesmo comando passa a servir HTTPS após a configuração. A conta da tarefa deve poder ler data/tls e o compartilhamento. Não use SYSTEM nem execute várias instâncias.
+Libere somente a porta HTTPS do Nexus para as sub-redes aprovadas, no firewall do host. A regra depende dos endereços e perfis reais da instalação. Para clientes e host na mesma LAN, não configure encaminhamento de porta WAN. O escopo descrito é a rede interna.
 
-O Everything também precisa fornecer a API após o reinício. Seu serviço de indexação não equivale à aplicação que hospeda HTTP. Teste a API local e o acesso de um segundo PC após reiniciar; a configuração de inicialização do Everything 1.4.1 precisa ser homologada no host.
+Everything deve continuar bind em 127.0.0.1:8888; desative seu download HTTP e não publique essa porta na LAN. O Nexus usa uma URL upstream fixa e recusa proxy genérico e cabeçalhos de identidade encaminhada.
 
-Para voltar à configuração anterior, encerre o Nexus e restaure o backup .env.before-https criado pelo assistente. Preserve data/users.json e as chaves; não apague toda a pasta data. A regra de firewall e a confiança instaladas manualmente são gerenciadas separadamente pelo administrador.
+## Testar
 
-## Referências
+1. Consulte o nome no DNS configurado, a partir de outro PC. Confira se retorna o endereço reservado.
+2. Abra a origem HTTPS exata, com o Nexus iniciado no host.
+3. Confira a validade/nome/cadeia do certificado e a ausência de aviso de confiança.
+4. Entre com duas contas de pastas distintas e compare árvore, resultados, totais e downloads.
+5. Reinicie o host em janela de manutenção e confira Everything, Nexus e acesso de outro PC.
 
-- [Microsoft certutil](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/certutil)
-- [Criptografia e X509 do Node](https://nodejs.org/api/crypto.html)
+Se o navegador mostrar ERR_CERT_AUTHORITY_INVALID, confira a instalação da autoridade correta no perfil atual. Não desative a validação nem contorne o aviso. Veja [diagnóstico](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/troubleshooting.md).

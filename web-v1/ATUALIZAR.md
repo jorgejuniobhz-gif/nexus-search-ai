@@ -1,42 +1,16 @@
-# Atualização 1.1.3: filtro por período
+# Atualizar o Nexus Web 1.1.3
 
-1. Encerre o Nexus com **Ctrl+C** e faça uma cópia privada da instalação, incluindo .env e data/.
-2. Extraia o conteúdo de **nexus-atualizacao-periodo-1.1.3.zip** diretamente na pasta que contém package.json e .env. Aceite substituir os arquivos do programa. O ZIP não tem uma pasta externa adicional.
-3. **Preserve .env e data/. Não execute setup novamente.** O pacote não contém configuração real nem base de usuários. Sua senha administrativa, raízes e opção de download permanecem iguais.
-4. No PowerShell, dentro dessa pasta, execute uma linha por vez:
+1. Pare o Nexus. Se uma tarefa agendada o mantém ativo, interrompa a tarefa antes de copiar.
+2. Faça backup privado de .env, data/ e caminhos externos de base/certificados configurados.
+3. Extraia o ZIP completo nexus-atualizacao-periodo-1.1.3.zip na pasta que contém package.json e server.mjs, substituindo os arquivos de programa. O pacote completo não tem pasta externa adicional. Se baixar o repositório pelo GitHub, selecione a branch codex/nexus-web-1.0 e use o conteúdo de web-v1.
+4. Preserve .env, data/users.json, data/tls e backups privados. Não execute setup nem setup:https em uma atualização comum.
+5. Na pasta de instalação, execute npm.cmd test. Inicie pelo método já usado: npm.cmd start ou a tarefa agendada, sem abrir duas instâncias.
+6. Acesse sua URL atual e pressione Ctrl+F5. Entre com a mesma conta/senha e confira concessões e downloads.
 
-    npm.cmd test
-    npm.cmd start
+A versão 1.1.3 tem Modificado de e Até, pela última modificação do índice Everything. Início e fim são opcionais e incluem os dias inteiros no horário do host. O filtro combina com texto, categoria/extensão, tipo e pasta antes de contagem/paginação. Aplicar período em uma pasta inclui suas subpastas. A árvore continua navegável sem filtro de data. Limpar filtros remove as datas e mantém a pasta atual.
 
-5. Abra sua URL atual (por padrão http://127.0.0.1:3000) e pressione **Ctrl+F5**.
-6. Entre com **usuário admin** e a mesma senha administrativa. Abra **Usuários** e cadastre as pessoas, com senha e pastas permitidas.
+Atualizar não muda automaticamente DNS, DHCP, firewall, certificados, contas ou pastas. O pacote não inclui .env real, data, acervo ou chave privada. O .cer público da autoridade só pode ser distribuído separadamente depois de recebido/conferido; não está implícito neste pacote.
 
-O download exige a opção global já existente e a permissão individual. Não é ativado globalmente pela atualização.
+Para reverter, pare o processo e restaure os arquivos de programa da versão anterior, preservando os dados locais e conferindo compatibilidade antes de iniciar.
 
-As contas são salvas automaticamente em data/users.json; preserve esse arquivo em futuros backups e atualizações. Na primeira utilização, a base é criada ao salvar a primeira conta. O arquivo e suas credenciais não integram o ZIP.
-
-## Uso da árvore
-
-A seta expande subpastas; o nome seleciona a pasta e mostra conteúdo direto. Digitar um termo ou aplicar extensão/categoria/período inclui as subpastas. Todas as pastas permitidas volta à busca geral. Limpar filtros mantém a pasta selecionada. Atualizar recarrega os ramos do índice.
-
-## Acesso em outros PCs
-
-A instalação continua local por padrão. As contas já funcionam no host local. Para acesso na LAN, configure o modo accounts com HTTPS conforme DEPLOYMENT.md. O pacote não abre portas nem muda permissões Windows.
-
-## Reversão
-
-Encerre o processo e restaure os arquivos do programa da cópia anterior. Preserve os dados locais separadamente. Não altere dados das raízes, inventários, checkpoints ou Onyx.
-
-## Sua senha
-
-Depois de entrar, abra Trocar minha senha no topo. Informe a atual, a nova e confirme. Após salvar, entre novamente. Para admin, a senha nova é guardada em data/users.json, sem editar o .env. Preserve os dois em futuras atualizações.
-
-## Filtro por período (1.1.3)
-
-Use Modificado de e Até para filtrar pela última modificação registrada no índice Everything. As duas datas são opcionais: só início pesquisa daquela data em diante; só fim pesquisa até aquele dia. O intervalo inclui os dois dias completos, no horário local do host Everything. Não é a data mencionada no conteúdo/nome do documento nem a data de criação. Datas inválidas ou início posterior ao fim são recusados no servidor.
-
-Combina com texto, extensão/categoria, tipo e pasta permitida. Ao selecionar uma pasta, preencher o período pesquisa também suas subpastas. A árvore permanece disponível sem filtro de data para navegação. Totais e paginação são calculados pelo Everything já com o período aplicado. Limpar filtros remove as datas e mantém a pasta atual. Arquivos sem data de modificação conhecida no índice podem não aparecer quando o período está ativo.
-
-A atualização usa o .env, contas e certificados existentes. Não execute setup nem setup:https novamente. Encerre o processo antes de substituir os arquivos, reinicie pelo método já utilizado e atualize o navegador com Ctrl+F5.
-
-Sintaxe upstream: [documentação do Everything](https://www.voidtools.com/support/everything/searching/), dm:AAAA-MM-DD..AAAA-MM-DD, dm:>=AAAA-MM-DD e dm:<=AAAA-MM-DD.
+Guias: [instalação](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/installation.md), [usuários](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/users.md), [rede/HTTPS](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/network.md), [operação](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/operations.md) e [validação](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/pilot-results.md).

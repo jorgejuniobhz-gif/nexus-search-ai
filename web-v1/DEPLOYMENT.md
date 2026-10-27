@@ -1,52 +1,27 @@
-Para usar a autoridade privada gerada localmente pelo assistente, siga HTTPS-LAN.md. A alternativa abaixo usa certificado fornecido por sua infraestrutura.
+# Configuração por ambiente
 
-# Execução local e LAN
+A configuração real fica no .env da instalação. O [exemplo](.env.example) contém valores fictícios. O comando npm.cmd start carrega esse arquivo; alterações exigem reiniciar o processo. Não substitua o .env existente pelo exemplo durante uma atualização.
 
-## Padrão preservado
+| Variável | Uso e padrão |
+| --- | --- |
+| NEXUS_MODE | admin-local por padrão; accounts exige HTTPS para servir a equipe |
+| NEXUS_HOST | 127.0.0.1 por padrão; 0.0.0.0 permitido apenas em accounts |
+| NEXUS_PORT | 3000 por padrão; 1024–65535, exceto 8888; o assistente HTTPS usa 3443 |
+| EVERYTHING_URL | Exclusivamente http://127.0.0.1:8888/, sem caminho extra ou credenciais |
+| NEXUS_ADMIN_HASH | Hash scrypt inicial gerado pelo setup; não é a senha em texto |
+| NEXUS_ROOTS | Array JSON de 1–20 raízes globais com path e unc opcional |
+| NEXUS_DOWNLOADS | false por padrão; true ainda depende da autorização individual |
+| NEXUS_USERS_FILE | Opcional; padrão data/users.json ao lado do aplicativo |
+| NEXUS_PUBLIC_ORIGIN | Origem HTTPS exata, com nome e porta do modo accounts |
+| NEXUS_TLS_CERT | Caminho local do certificado/cadeia PEM do servidor |
+| NEXUS_TLS_KEY | Caminho local da chave privada PEM do servidor |
 
-A atualização mantém o .env existente e o bind em 127.0.0.1. Todas as contas e o painel funcionam no modo admin-local somente no próprio PC. Não é necessário WSL. Execute no Windows que hospeda Everything, com uma conta Windows que tenha a leitura necessária. Não use SYSTEM nem elevação desnecessária.
+O modo admin-local restringe a conexão ao host local; contas já cadastradas também podem entrar por esse acesso local. Ele não é uma alternativa HTTP para a equipe. O modo accounts valida origem/porta e requer certificado/chave, sem assumir identidade de cabeçalhos enviados por proxy.
 
-Nenhuma tarefa, serviço, porta ou firewall é alterado automaticamente. Para iniciar após reinício, o administrador pode configurar o Agendador de Tarefas com o caminho absoluto do Node, argumentos --env-file=.env server.mjs, diretório do programa e a conta Windows aprovada.
+NEXUS_ROOTS deve usar o mesmo caminho que aparece no índice Everything. O campo unc mapeia a apresentação de uma raiz local para o compartilhamento correspondente. Concessões dos usuários são intersectadas com essas raízes a cada requisição. Caminhos precisam ser absolutos, locais Windows ou UNC válidos. Mantenha o JSON com barras corretamente escapadas e preserve as aspas do .env gerado pelo assistente.
 
-## LAN com autenticação própria e HTTPS
+Se a senha administrativa foi trocada na interface, o hash protegido em data/users.json prevalece sobre o inicial do .env. Preserve os dois arquivos. Variáveis e arquivo-base não contêm uma opção para ignorar autorização, habilitar proxy genérico ou transferir pelo Everything.
 
-O modo escolhido usa login/senha e concessões de pastas no Nexus, sem AD. Para acessar de outros PCs:
+Certificados externos ou caminho alternativo de usuários também precisam ser incluídos no backup. O acesso ao filesystem segue a conta Windows do processo. Consulte [instalação](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/installation.md), [rede](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/network.md) e [segurança](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/security.md).
 
-1. Configure nome/IP estável e obtenha certificado de servidor emitido por uma CA confiável pelos PCs da equipe, incluindo esse nome/IP. Guarde a chave privada apenas no host, com permissões restritas. Não desative validação de certificado nos clientes.
-2. Preserve o .env e configure o modo accounts, bind, origem e TLS. Exemplo fictício:
-
-    NEXUS_MODE='accounts'
-    NEXUS_HOST='0.0.0.0'
-    NEXUS_PORT='3443'
-    NEXUS_PUBLIC_ORIGIN='https://nexus.example.internal:3443'
-    NEXUS_TLS_CERT='C:\ExampleCertificates\server-chain.pem'
-    NEXUS_TLS_KEY='C:\ExampleCertificates\server-key.pem'
-
-3. Use certificado/cadeia e chave em PEM. A porta da origem deve coincidir com a porta do Nexus. A URL não pode conter credenciais. Ausência de HTTPS impede inicialização no modo accounts.
-4. Reinicie e use a URL configurada também no host local. O próprio Node serve HTTPS; não há frontend HTTP nem proxy reverso. Outro Host/IP/porta será recusado.
-5. Restrinja no firewall a entrada na porta HTTPS escolhida às sub-redes da equipe. Não crie exposição à internet. **Everything continua em 127.0.0.1:8888**, sem entrada na 8888 e sem proxy genérico ou download HTTP.
-6. Entre como admin com a senha preservada e crie contas individuais. Downloads exigem permissão global e individual.
-7. Homologue com duas contas e arquivos sintéticos: nomes, totais, árvore, downloads, revogação durante sessão e persistência após reinício. Confirme que a base de usuários não é acessível pela web.
-
-O pacote não contém certificado/chave, não ativa LAN e não modifica firewall. A leitura usa a conta Windows do processo após autorizar a conta Nexus. Se precisar exigir ACL Windows por identidade individual, é necessária outra integração; esse não é o modelo atual.
-
-## Ambiente
-
-- NEXUS_MODE: admin-local por padrão ou accounts com HTTPS.
-- NEXUS_HOST: 127.0.0.1 por padrão; 0.0.0.0 permitido apenas em accounts.
-- NEXUS_PORT: padrão 3000, mínimo 1024, diferente de 8888.
-- EVERYTHING_URL: somente http://127.0.0.1:8888/.
-- NEXUS_ADMIN_HASH: credencial scrypt do administrador, gerada localmente.
-- NEXUS_ROOTS: array JSON de raízes globais com path e unc opcional; concessões individuais devem estar dentro delas.
-- NEXUS_DOWNLOADS: false por padrão; true habilita conforme a conta.
-- NEXUS_USERS_FILE: opcional; padrão data/users.json ao lado do programa.
-- NEXUS_PUBLIC_ORIGIN: origem HTTPS exata com a mesma porta do Nexus no modo accounts.
-- NEXUS_TLS_CERT / NEXUS_TLS_KEY: caminhos de certificado/cadeia e chave privada PEM.
-
-Edite .env e reinicie para aplicar. Preserve as aspas simples externas e o JSON das raízes. As contas usam data/ por padrão, não a pasta de documentos pesquisados.
-
-## Preservação e recuperação
-
-Proteja .env, data/, chave TLS e backups com permissões NTFS. Nunca publique esses arquivos. Corrupção da base impede iniciar; restaure o backup sem apagar a base para contornar o erro.
-
-A autorização Nexus é independente dos compartilhamentos Windows existentes. Inventário, checkpoints, Onyx, índices e bancos não são alterados. Para retornar ao acesso local, encerre, ajuste admin-local/127.0.0.1/porta local e retire a regra de entrada que o administrador criou. Preserve as contas e os arquivos das raízes.
+Consulte o [procedimento de instalação](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/installation.md), a [rede/HTTPS](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/network.md) e a [inicialização automática e manutenção](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/operations.md).

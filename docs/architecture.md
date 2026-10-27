@@ -1,56 +1,56 @@
-# Arquitetura do Nexus Search AI
+# Arquitetura do Nexus Search AI Web 1.1.3
 
-## Objetivo
+## Componentes
 
-Disponibilizar busca por conteúdo e consultas em linguagem natural a documentos autorizados, por navegador, em pequena equipe. O projeto complementa — **não substitui** — a organização gradual do acervo de origem.
+| Componente | Responsabilidade |
+| --- | --- |
+| Navegador | Interface, calendários, árvore, filtros, paginação e ações sobre resultados |
+| Backend Node.js | Login, sessão, autorização por conta, consultas ao índice e downloads |
+| Everything 1.4.1 | Índice e busca de nomes, caminhos, tipos, extensões, tamanhos e datas |
+| Disco ou compartilhamento SMB | Arquivo original; leitura pelo processo somente após autorizar o download |
+| Base local de contas | data/users.json, com hashes de senha e concessões por pasta |
+| DNS/DHCP e certificado | Nome estável, endereço estável e confiança HTTPS para os clientes |
 
-## Ambientes separados
+## Topologia
 
-```text
-Servidor de documentos (Windows Server)
-     |   compartilhamento SMB (futuro: somente leitura)
-     v
-Computador de processamento (Windows 11)
-     |-- Ubuntu WSL2 + Docker Desktop
-     |     |-- Onyx Standard v4.9.4
-     |     |-- índice / base de dados / serviços internos
-     |     '-- agente Nexus + recuperação de fontes
-     '-- Ollama local -> Qwen3 1.7B (modelo funcional)
+~~~text
+PCs da equipe -- HTTPS --> Host Windows de processamento
+                            |-- Nexus / Node.js
+                            |       |-- .env e data/users.json locais
+                            |       |-- certificados em data/tls
+                            |       '-- leitura autorizada de disco/SMB
+                            '-- Everything HTTP JSON
+                                  127.0.0.1:8888 (somente local)
 
-Navegador local -> Onyx -> busca e respostas fundamentadas
-```
+Servidor de arquivos -- compartilhamento SMB --> host de processamento
+~~~
 
-**Estado atual:** documentos sintéticos inseridos pelo conector File. **Nenhum compartilhamento SMB real integrado**.
+O backend e o Everything ficam no mesmo host porque a origem upstream é fixa em 127.0.0.1. O host Windows pode ser diferente do servidor que armazena os documentos. A raiz cadastrada precisa coincidir com o caminho existente no índice; o mapeamento UNC de apresentação não transforma uma raiz não indexada em indexada.
 
-## Pipeline documental pretendido
+## Fluxo de pesquisa
 
-Fonte aprovada e somente leitura -> extração de texto (PDF nativo, DOCX, etc.) -> OCR opcional em digitalizações -> indexação -> consulta semântica/por palavra-chave -> resposta com referência ao documento.
+1. O usuário entra com login e senha próprios do Nexus.
+2. O servidor valida sessão, conta ativa e versão das permissões.
+3. As concessões da conta são intersectadas com as raízes globais do .env.
+4. Texto e filtros são validados; a consulta é restrita às pastas autorizadas antes de chegar ao Everything.
+5. O Everything devolve uma página e o total já filtrado via JSON.
+6. O Nexus valida formato, caminhos e contenção. Uma página fora do escopo é recusada integralmente, incluindo o total.
+7. Os itens recebem IDs ligados à sessão e são apresentados no navegador.
 
-O índice e suas citações podem conter trechos sensíveis: proteger o processamento, o armazenamento e o acesso ao navegador. Sem homologação de segurança, limitar os dados a um conjunto comum e não confidencial.
+Conta sem pastas recebe zero resultados sem consulta upstream. Mudança de permissões durante uma busca impede devolver a resposta com o acesso anterior.
 
-## Modelo e fluxo
+## Árvore e período
 
-- LLM local: Ollama no Windows, acessado pelo Docker via `host.docker.internal`.
-- Integração de chat bem-sucedida: provedor **OpenAI-Compatible**, URL local `/v1`, Qwen3 1.7B.
-- Agente: **Nexus — Pesquisa Documental**, instruções de idioma, fontes, concisão e não invenção.
-- Busca: Onyx Standard com índice interno e ferramentas de pesquisa.
-- A qualidade do agente depende de recuperação e de chamadas auxiliares de IA. Um documento pequeno ainda pode disparar múltiplas etapas e timeouts.
+A árvore carrega filhos diretos em páginas de até 100 pastas. Ela não recebe filtros por período, permitindo navegar mesmo quando uma pasta tem data antiga. Selecionar uma pasta sem texto, categoria/extensão ou período mostra o conteúdo direto. Preencher um desses filtros pesquisa também nas subpastas; todas as pastas permitidas pesquisa no conjunto de concessões.
 
-## Limites operacionais observados
+O período usa a última modificação do índice. Datas de início e fim são opcionais e seguem dias de calendário do host Everything. Os dois extremos são inclusivos. O filtro é combinado com os demais antes de contagem e paginação; não é aplicado apenas à página visível.
 
-- Computador: ~16 GB RAM, GPU com 4 GB de VRAM.
-- Docker/WSL2: limite observado próximo de **7,68 GiB**.
-- A medição instantânea mostrou OpenSearch ~2,63 GiB, background ~1,33 GiB e outros serviços relevantes; o total dos contêineres aproximou-se do limite.
-- Ollama no Windows usa recursos **fora** da medição dos contêineres.
-- Uma busca complexa com apenas dois arquivos mostrou `Thought for 8m16s`, com erros de timeout em chamadas auxiliares. Em outra busca com Qwen3 1.7B, `Thought for 40s`, resultado correto. **Thinking não é latência total.**
+## Fluxo de download e abertura
 
-## Segurança e implantação progressiva
+O navegador pede verificação de acesso para um ID obtido na própria sessão. O backend exige download global e individual habilitados, arquivo dentro das concessões e leitura de um arquivo regular. O download efetivo repete a autorização e a checagem; a transferência sai do filesystem, não do HTTP do Everything. Revogação de conta interrompe streams ativos.
 
-1. Fontes fictícias na prova de conceito.
-2. Pasta-piloto autorizada, somente leitura.
-3. Pesquisa interna e citações verificadas independentemente.
-4. Testes de controle de acesso com usuários de permissões distintas.
-5. Expansão gradual do índice; não ingerir o acervo completo de uma vez.
-6. Hospedagem e acesso na rede apenas após autenticação e endurecimento.
+Abrir no Windows copia o caminho para o usuário colar no Explorador. O navegador pode bloquear links locais. O backend não inicia aplicativos nem arquivos no host. O Explorador usa as permissões Windows da pessoa.
 
-Não assumir suporte automático a permissões SMB/NTFS por usuário. Recursos podem variar por edição e conector.
+## Fronteiras de confiança
+
+As contas são identidades da aplicação, sem integração de identidade Windows por pessoa. A conta Windows do processo precisa apenas das leituras aprovadas e do acesso aos dados locais da aplicação. As permissões do painel controlam o Nexus; as permissões SMB/NTFS controlam o acesso direto ao servidor. Veja [segurança](security.md).

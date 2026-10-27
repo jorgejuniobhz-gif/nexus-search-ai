@@ -1,43 +1,47 @@
-# Validação — Web 1.1
+# Testes e resultados — Web 1.1.3
 
-17 verificações: **16 aprovadas, nenhuma falha e 1 subteste de junction ignorado** porque o ambiente atual não permite criar a fixture (EPERM). A leitura de arquivo sintético, rejeição de diretório/arquivo ausente e contenção de caminhos passaram. O bloqueio de junctions continua implementado e havia passado na entrega inicial; repetir em um Windows que permita a fixture.
+## Validação automatizada
 
-## Cobertura automatizada
+A suite node --test teve 19 verificações: **18 aprovadas, 0 falhas e 1 subteste ignorado**. A fixture de junction não pôde ser criada por restrição do ambiente; a verificação no host real continua necessária.
 
-- Configuração falha para LAN sem HTTPS, origem HTTP, upstream arbitrário e ausência de segredo; o Everything continua fixo em loopback.
-- Validação de caminhos Windows/UNC, travessia, dispositivos, streams alternativos, escopo e paginação.
-- Autenticação, origem, rejeição de proxy, sessão, IDs aleatórios, download e nova checagem de leitura.
-- Árvore autenticada com filhos imediatos, paginação e rejeição de resultados de outro nível.
-- Base de usuários persistente com scrypt/salt, sem senha em texto claro ou hash na API; duplicidade de login, senha curta, pasta fora do escopo, conflito de edição e falha de gravação.
-- Duas contas com pastas distintas: raízes, árvore, nomes, totais e IDs de download isolados; conta comum não acessa administração.
-- Download depende das duas permissões: global e individual.
-- Resposta upstream fora do escopo não revela arquivo nem total global.
-- Desativação, mudança de senha e de pastas revogam sessões e impedem devolver buscas em andamento com permissões antigas.
-- Conta sem pastas retorna zero sem consultar o índice.
-- Desativar a conta interrompe um download já aberto.
+Foram exercitados:
 
-A fixture persistente passou no diretório de trabalho. A pasta temporária isolada do sistema recusou rename; o teste foi movido para seu próprio diretório de trabalho autorizado e limpo após o uso, sem alterar o mecanismo de gravação do produto.
+- Configuração local e exigência de HTTPS/origem exata para modo LAN.
+- Caminhos Windows, contenção, travessia, ADS, nomes de dispositivo e respostas fora do escopo.
+- Login, cookies, origem, revogação e recusa de identidade encaminhada por proxy.
+- Duas contas com pastas distintas; isolamento de árvore, resultados, totais e downloads.
+- Conta sem concessões; estado desativado; redefinição/troca de senha e persistência do hash administrativo.
+- Gravação atômica e concorrência da base; recusa de base inválida.
+- Download por ID de sessão, nova checagem de leitura e interrupção de transferência após revogação.
+- Árvore de filhos diretos, paginação e recusa de resposta upstream malformada.
+- TLS com validação normal: autoridade desconhecida recusada, autoridade/nome corretos aceitos.
+- Datas reais, anos bissextos, limites 1601–9999, formato/injeção, intervalo invertido, mesmo dia e limites opcionais.
+- Período combinado com escopo antes de contagem/paginação; árvore independente do período.
 
-## Navegador
+As fixtures de API/acervo são sintéticas. O teste do período cobre o primeiro instante do dia inicial e 23:59:59 do último no simulador; isso não comprova o parser ou atualização do índice Everything real.
 
-API e acervo exclusivamente fictícios. Conferidos: login administrativo, painel, cadastro de conta, seleção de subpasta na árvore, permissão de download e login da conta comum mostrando somente sua pasta e sem botão de administração. Gestão de usuários conferida em larguras de 1280 e 390 pixels, sem rolagem horizontal. Conferidos também árvore por nível, segunda página de pastas, conteúdo direto, pesquisa recursiva e layout responsivo.
+## Interface
 
-## Limites de homologação
+Navegador conferido com dados fictícios: login, árvore por nível, conteúdo direto, pesquisa recursiva, paginação, cadastro/edição de conta, concessão de subpasta, download por conta, troca própria de senha, calendários, combinação de filtros, aviso de período invertido e limpeza. Gestão de usuários também foi conferida em larguras de 1280 e 390 pixels.
 
-Não houve acesso ao Everything ou acervo real da instalação do usuário. É necessário homologar Everything 1.4.1, leitura NTFS/SMB, mapeamentos UNC e firewall no host de operação. O modo HTTPS usa o servidor TLS padrão do Node; certificado, cadeia, confiança dos clientes e acesso por outros PCs devem ser verificados na LAN real. Os testes de configuração não comprovam essa implantação.
+## Retorno da instalação
 
-O pacote de atualização não inclui .env, data/, contas, certificados/chaves, caminhos reais ou arquivos do acervo. Não foram modificados inventário, checkpoints, Onyx, Everything, firewall ou serviços existentes.
+O responsável informou funcionamento em testes locais e carregamento bem-sucedido da atualização 1.1.3. Durante a implantação, foram realizados os passos de nome na LAN, reserva de endereço e confiança do certificado no navegador, sem publicar os valores operacionais no repositório.
 
-## Troca da própria senha
+Esse retorno não substitui teste independente de todas as contas, permissões, casos de data, carga ou recuperação. Não há benchmark de latência ou capacidade comprovada para uma quantidade específica de usuários simultâneos.
 
-Testadas senha atual incorreta, confirmação divergente, senha curta, troca de conta comum sem afetar admin, encerramento de todas as sessões, troca administrativa persistente, recusa da credencial antiga e preservação do hash administrativo ao editar outras contas. Nenhuma senha real foi usada. A tela de troca foi conferida no navegador sem alterar credenciais reais.
+## Homologação no host
 
-## Assistente HTTPS
+Antes de ampliar o uso, verificar com arquivos autorizados de datas conhecidas: primeiro/último dia, mesmo dia, só início, só fim, ausência de data e atualização do índice. Validar também leitura NTFS/SMB pela conta real do processo, links/junctions, firewall, certificados e acesso em outro PC.
 
-Testada conexão TLS real com validação normal: cliente sem a autoridade local é recusado; cliente com a autoridade e nome corretos é aceito. Testadas assinatura, nome incorreto, preservação de .env/contas/downloads, backup, tratamento de chaves duplicadas e reutilização sem regenerar certificados válidos. Proteção NTFS via icacls, importação no repositório de certificados do Windows, firewall e confiança nos navegadores da equipe exigem homologação no host; o teste de arquivos usa um protetor de diretório simulado. Nenhuma chave ou certificado gerado foi incluído na entrega.
+Após reiniciar o Windows, confirmar HTTP JSON local do Everything, inicialização do Nexus, conta de execução, sessão de colaborador e download permitido/negado. Executar teste de restauração de backup em ambiente isolado.
 
-## Filtro por período 1.1.3
+## Reproduzir a suite
 
-Suite completa: 19 verificações, 18 aprovadas, nenhuma falha e 1 subteste de junction ignorado porque o ambiente não permite criar essa fixture. Testados datas impossíveis, anos bissextos, limites 1601–9999, formato/injeção, início após fim, mesmo dia, só início, só fim, combinação com texto e extensão, paginação após filtrar, conta limitada a uma subpasta e árvore sem filtro de data. Intervalos inválidos e pasta não permitida não chegam ao upstream. A fixture cobre início do primeiro dia e 23:59:59 do último; o parser real do Everything 1.4.1 deve ser homologado no host com arquivos conhecidos.
+Na pasta que contém package.json:
 
-Navegador conferido com API fictícia: preenchimento dos dois calendários, combinação com PDF/tipo, contagem, aviso de intervalo invertido e Limpar filtros. Captura nexus-periodo.png com dados fictícios. A execução inicial da suite foi bloqueada pela rede local do sandbox; após autorização de conexões locais a suite passou.
+~~~cmd
+npm.cmd test
+~~~
+
+Os testes criam arquivos/contas sintéticos e listeners de loopback temporários. Precisam de permissão para conexões locais. Não apontam para o acervo real e não alteram a configuração do Everything.

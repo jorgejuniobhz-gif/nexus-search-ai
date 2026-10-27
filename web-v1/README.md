@@ -1,31 +1,73 @@
-# Nexus Search AI Web 1.1
+# Nexus Search AI Web
 
-Pesquisa via Everything 1.4.1 com árvore de pastas e contas próprias do Nexus. Node.js 24+, Windows, sem dependências npm externas.
+Interface web para a equipe localizar arquivos e pastas do servidor por **nome e caminho**, usando o índice do Everything 1.4.1. A versão documentada é a **1.1.3**, com contas individuais, permissões de pastas, árvore de navegação, download controlado e filtro por período de modificação.
 
-Para atualizar, preserve .env e data/ e siga ATUALIZAR.md. O administrador usa login admin e a mesma senha já configurada. Não execute setup novamente.
+## Arquitetura em uso
 
-Veja USUARIOS.md para cadastro, permissões, downloads e limites; DEPLOYMENT.md para acesso local e opção de LAN com HTTPS; VALIDATION.md para testes e limites de verificação.
+~~~text
+Navegador da equipe
+        | HTTPS + login Nexus
+        v
+Backend Nexus (Node.js no Windows)
+        |-- sessão, permissões e validação dos filtros
+        |-- HTTP JSON em 127.0.0.1:8888 --> Everything 1.4.1
+        |                                  índice de nomes/caminhos/datas
+        |-- resultados e totais das pastas autorizadas --> navegador
+        '-- download autorizado --> leitura do arquivo no disco/SMB
+~~~
 
-Na primeira instalação, execute npm.cmd run setup, guarde a senha gerada, execute npm.cmd test e npm.cmd start. Acesse http://127.0.0.1:3000 no host Windows que executa Everything.
+O Everything e o backend executam no mesmo host Windows de processamento. O servidor de arquivos fornece o compartilhamento. A equipe acessa somente o Nexus; a porta 8888 permanece no loopback. A pesquisa usa metadados: não lê o conteúdo dos documentos para produzir respostas.
 
-Mantenha Everything em 127.0.0.1:8888, sem exposição à LAN e com download HTTP desativado. O Nexus não usa o endpoint de download do Everything. Documentação oficial: https://www.voidtools.com/support/everything/http/
+## Código e documentação
 
-Busca literal com debounce, filtros, paginação, contagens autorizadas, migalhas e mapeamento UNC. A árvore carrega um nível por vez. Selecionar uma pasta mostra conteúdo direto; digitar pesquisa também nas subpastas. A extensão digitada prevalece sobre a categoria. Aspas e controles não são aceitos.
+A documentação principal está na branch main. O código executável está na pasta **web-v1** da branch **codex/nexus-web-1.0**, com integração acompanhada pelo [PR #1](https://github.com/jorgejuniobhz-gif/nexus-search-ai/pull/1). Até essa integração, baixar apenas a main não fornece a aplicação.
 
-Abrir no Windows copia o caminho para colar no Explorador. Navegadores normalmente bloqueiam abrir arquivos locais; nenhum executável é iniciado no backend.
+- [Código da aplicação 1.1.3](https://github.com/jorgejuniobhz-gif/nexus-search-ai/tree/codex/nexus-web-1.0/web-v1)
+- [Arquitetura e fluxo de autorização](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/architecture.md)
+- [Instalação e atualização](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/installation.md)
+- [Configuração por ambiente](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/configuration.md)
+- [DNS, DHCP, pfSense e HTTPS](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/network.md)
+- [Contas, pastas e senhas](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/users.md)
+- [Inicialização automática, backup e manutenção](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/operations.md)
+- [Diagnóstico de problemas](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/troubleshooting.md)
+- [Segurança e privacidade](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/security.md)
+- [Testes e resultados](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/pilot-results.md)
+- [Evolução do produto](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/roadmap.md)
 
-Sem resultados: confirme que a raiz existe no índice usando o mesmo caminho local ou UNC. Everything indisponível: verifique http://127.0.0.1:8888/?search=teste&json=1 no host. Exige JSON sem redirecionamento; o Nexus não envia Basic Auth upstream. Não amplie permissões para contornar erros de escopo.
+## Recursos disponíveis
 
-Inventários, checkpoints e Onyx existentes não são alterados. Não publique .env, data/, contas, certificados, caminhos reais ou arquivos do acervo.
+- Pesquisa literal com debounce, carregamento, erros e resultados vazios.
+- Árvore por nível e navegação por pastas, com migalhas derivadas do caminho.
+- Filtros por categoria/extensão, arquivo/pasta e período de última modificação.
+- Datas de início e fim opcionais; o dia final é incluído inteiro.
+- Totais autorizados e paginação de 25, 50 ou 100 resultados.
+- Cópia de caminho UNC e orientação para abrir o original pelo Explorador do Windows.
+- Login, painel administrativo, concessões por pasta, ativação/desativação e senhas.
+- Download opcional, condicionado às permissões e à leitura do arquivo no backend.
+- HTTPS na LAN com certificado confiável e origem configurada.
 
-Para configurar HTTPS com o nome nexus, consulte HTTPS-LAN.md e execute npm.cmd run setup:https -- --name nexus no host já configurado. O assistente não instala confiança nem abre firewall automaticamente.
+## Uso e requisitos
 
-## Filtro por período (1.1.3)
+Windows, Node.js 24+ e Everything 1.4.1 com API JSON local funcional. Não há dependências npm externas. Instale na máquina que hospeda a API do Everything, executando com uma conta Windows autorizada a ler as pastas.
 
-Use Modificado de e Até para filtrar pela última modificação registrada no índice Everything. As duas datas são opcionais: só início pesquisa daquela data em diante; só fim pesquisa até aquele dia. O intervalo inclui os dois dias completos, no horário local do host Everything. Não é a data mencionada no conteúdo/nome do documento nem a data de criação. Datas inválidas ou início posterior ao fim são recusados no servidor.
+Na primeira instalação, dentro de web-v1:
 
-Combina com texto, extensão/categoria, tipo e pasta permitida. Ao selecionar uma pasta, preencher o período pesquisa também suas subpastas. A árvore permanece disponível sem filtro de data para navegação. Totais e paginação são calculados pelo Everything já com o período aplicado. Limpar filtros remove as datas e mantém a pasta atual. Arquivos sem data de modificação conhecida no índice podem não aparecer quando o período está ativo.
+~~~cmd
+npm.cmd run setup
+npm.cmd test
+npm.cmd start
+~~~
 
-A atualização usa o .env, contas e certificados existentes. Não execute setup nem setup:https novamente. Encerre o processo antes de substituir os arquivos, reinicie pelo método já utilizado e atualize o navegador com Ctrl+F5.
+O setup gera a senha inicial do login admin uma única vez. O padrão local é http://127.0.0.1:3000. Para a equipe, configure HTTPS conforme o [guia de rede](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/network.md); com o nome nexus, a URL preparada pelo assistente é https://nexus:3443.
 
-Sintaxe upstream: [documentação do Everything](https://www.voidtools.com/support/everything/searching/), dm:AAAA-MM-DD..AAAA-MM-DD, dm:>=AAAA-MM-DD e dm:<=AAAA-MM-DD.
+Em atualizações, preserve .env e data/ e não repita os assistentes. A configuração da LAN existente também deve ser preservada.
+
+## Limites do modelo de acesso
+
+As permissões Nexus são verificadas no servidor. Elas não alteram nem reproduzem as permissões individuais do Windows/SMB. Downloads usam a conta Windows do processo após autorizar a conta Nexus. Acesso direto ao compartilhamento continua obedecendo às permissões do servidor de arquivos.
+
+Arquivos, credenciais, contas, chaves privadas e configurações reais ficam fora do repositório. O certificado público da autoridade local pode ser distribuído separadamente, após conferência de origem e impressão digital. As instruções usam exemplos genéricos.
+
+## Estado da validação
+
+Suite da versão 1.1.3: 18 verificações aprovadas, nenhuma falha e 1 subteste de junction ignorado por restrição do ambiente. A interface foi conferida com dados fictícios; o responsável pela instalação relatou funcionamento nos testes locais. Esse relato não representa certificação de todos os cenários de acesso, concorrência ou recuperação. Veja os [resultados e limites](https://github.com/jorgejuniobhz-gif/nexus-search-ai/blob/main/docs/pilot-results.md).

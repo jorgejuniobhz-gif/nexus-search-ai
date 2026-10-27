@@ -1,57 +1,47 @@
-# Piloto de pesquisa documental — 23/10/2026
+# Testes e resultados — Web 1.1.3
 
-## Escopo
+## Validação automatizada
 
-Busca em **dois arquivos TXT totalmente fictícios**, enviados ao mesmo conector **File** e utilizados pelo agente **Nexus — Pesquisa Documental**.
+A suite node --test teve 19 verificações: **18 aprovadas, 0 falhas e 1 subteste ignorado**. A fixture de junction não pôde ser criada por restrição do ambiente; a verificação no host real continua necessária.
 
-Nenhum documento do servidor de arquivos real foi conectado até este marco. Conteúdos abaixo são apenas valores de teste, não dados operacionais.
+Foram exercitados:
 
-## Casos validados
+- Configuração local e exigência de HTTPS/origem exata para modo LAN.
+- Caminhos Windows, contenção, travessia, ADS, nomes de dispositivo e respostas fora do escopo.
+- Login, cookies, origem, revogação e recusa de identidade encaminhada por proxy.
+- Duas contas com pastas distintas; isolamento de árvore, resultados, totais e downloads.
+- Conta sem concessões; estado desativado; redefinição/troca de senha e persistência do hash administrativo.
+- Gravação atômica e concorrência da base; recusa de base inválida.
+- Download por ID de sessão, nova checagem de leitura e interrupção de transferência após revogação.
+- Árvore de filhos diretos, paginação e recusa de resposta upstream malformada.
+- TLS com validação normal: autoridade desconhecida recusada, autoridade/nome corretos aceitos.
+- Datas reais, anos bissextos, limites 1601–9999, formato/injeção, intervalo invertido, mesmo dia e limites opcionais.
+- Período combinado com escopo antes de contagem/paginação; árvore independente do período.
 
-| Teste | Fonte | Resultado esperado | Resultado observado |
-| --- | --- | --- | --- |
-| Código do projeto fictício Vila Aurora | `teste-nexus.txt` | `NX-8472` | Correto; fonte identificada |
-| Responsável e data de início de Vila Aurora | `teste-nexus.txt` | `Marina Oliveira`, `15/09/2026` | Correto; fonte apresentada |
-| Total de documentos do projeto fictício Horizonte | `teste-nexus-02.txt` | `347` | Correto; execução de busca e leitura da fonte observada |
+As fixtures de API/acervo são sintéticas. O teste do período cobre o primeiro instante do dia inicial e 23:59:59 do último no simulador; isso não comprova o parser ou atualização do índice Everything real.
 
-A recuperação independente foi mais evidente no teste **Horizonte**, pois o registro mostrou `Searching internal documents` e `Reading teste-nexus-02.txt`. Em respostas anteriores houve indicação de reutilização de contexto/histórico, portanto não é correto tratar cada acerto como prova de uma nova busca.
+## Interface
 
-## Comportamento observado
+Navegador conferido com dados fictícios: login, árvore por nível, conteúdo direto, pesquisa recursiva, paginação, cadastro/edição de conta, concessão de subpasta, download por conta, troca própria de senha, calendários, combinação de filtros, aviso de período invertido e limpeza. Gestão de usuários também foi conferida em larguras de 1280 e 390 pixels.
 
-- Agente personalizado respondeu corretamente em português em testes básicos e citou fontes.
-- Algumas respostas saíram em inglês ou extrapolaram o formato solicitado; instruções ajudam, mas não substituem testes.
-- `qwen3:1.7b` funcionou no chat com integração **OpenAI-Compatible**; `qwen3.5:4b` está disponível para comparação, **sem aprovação de desempenho**.
-- Um teste exibiu `Thought for 8m16s` e reportou timeout de `internal_search` seguido de nova tentativa.
-- No segundo arquivo, `Thought for 40s`, com resultado correto e busca interna visível.
-- Respostas rápidas sem busca claramente identificável **não validam indexação nem ganho de latência de busca**.
+## Retorno da instalação
 
-## Diagnóstico técnico de desempenho
+O responsável informou funcionamento em testes locais e carregamento bem-sucedido da atualização 1.1.3. Durante a implantação, foram realizados os passos de nome na LAN, reserva de endereço e confiança do certificado no navegador, sem publicar os valores operacionais no repositório.
 
-Instantâneo dos contêineres, com limite compartilhado do Docker próximo de **7,68 GiB**:
+Esse retorno não substitui teste independente de todas as contas, permissões, casos de data, carga ou recuperação. Não há benchmark de latência ou capacidade comprovada para uma quantidade específica de usuários simultâneos.
 
-| Serviço | Memória aproximada |
-| --- | ---: |
-| OpenSearch | 2,63 GiB |
-| Processamento em background | 1,33 GiB |
-| Servidor de inferência | 0,72 GiB |
-| API | 0,52 GiB |
-| Modelo de indexação | 0,40 GiB |
+## Homologação no host
 
-Os demais serviços também ocupam memória. Esses números são **um snapshot**, não medições de pico. Ollama executa no Windows e não aparece em `docker stats`. Ainda não se confirmou saturação como causa única.
+Antes de ampliar o uso, verificar com arquivos autorizados de datas conhecidas: primeiro/último dia, mesmo dia, só início, só fim, ausência de data e atualização do índice. Validar também leitura NTFS/SMB pela conta real do processo, links/junctions, firewall, certificados e acesso em outro PC.
 
-Logs sanitizados indicaram:
-- `LLM streaming call exceeded its total timeout` durante busca interna.
-- `httpx.ReadTimeout` e `litellm.Timeout` em decisões auxiliares.
-- Falhas em `document selection`, `context selection` e `time filter`.
-- Falha de geração de nome de conversa por timeout.
+Após reiniciar o Windows, confirmar HTTP JSON local do Everything, inicialização do Nexus, conta de execução, sessão de colaborador e download permitido/negado. Executar teste de restauração de backup em ambiente isolado.
 
-## Critérios para próximo marco
+## Reproduzir a suite
 
-- Fazer novas perguntas sobre dados inéditos em sessões novas.
-- Medir tempo total e p50/p95 por tipo de consulta (incluindo buscas sem resposta).
-- Testar presença e ausência de fontes e citações corretas.
-- Comparar desempenho com e sem IA sobre os mesmos arquivos.
-- Rodar casos com 10, 100 e 1.000 documentos *sintéticos* antes de conectar acervos reais.
-- Verificar permissões de acesso e não divulgação antes de piloto com mais usuários.
+Na pasta que contém package.json:
 
-**Resultado geral:** prova de conceito funcional, mas **não pronta para produção** por latência e controles de acesso ainda não homologados.
+~~~cmd
+npm.cmd test
+~~~
+
+Os testes criam arquivos/contas sintéticos e listeners de loopback temporários. Precisam de permissão para conexões locais. Não apontam para o acervo real e não alteram a configuração do Everything.

@@ -1,49 +1,45 @@
-# Gestão de usuários
+# Usuários, pastas e senhas
 
-A administração usa contas próprias do Nexus, conforme o modelo aprovado pelo usuário. Não há integração com AD. A autorização por pessoa é feita no backend antes de consultar o Everything e novamente antes de baixar conteúdo.
+## Administrador
 
-## Cadastro simples
+O login principal é admin. A senha inicial é gerada uma vez por npm.cmd run setup. Atualizar o programa ou instalar o certificado não muda a senha. O painel de contas comuns não remove nem promove alguém a administrador principal.
 
-1. Entre com login **admin** e a senha administrativa já existente.
-2. Abra **Usuários** e **Novo usuário**.
-3. Informe nome, login de 3 a 32 caracteres e senha inicial de 12 a 128 caracteres. O login aceita letras, números, ponto, hífen e sublinhado, sem distinguir maiúsculas/minúsculas.
-4. Expanda a árvore e marque as pastas permitidas. Marcar uma pasta inclui todos os seus descendentes. Não há negação por subpasta dentro de uma pasta concedida. Nenhuma seleção significa nenhum acesso.
-5. Marque **Permitir download** se a pessoa puder receber o conteúdo dessas pastas. A variável global NEXUS_DOWNLOADS também deve ser true.
-6. Salve e informe login/senha à pessoa por um canal privado. Não envie credenciais para GitHub ou chats.
+## Cadastrar colaborador
 
-O painel permite editar nome, login, pastas, permissão de download e estado ativo. Deixe a senha vazia na edição para mantê-la; preencha para redefinir. As senhas nunca são recuperadas nem exibidas.
+1. Entre como admin e abra Usuários → Novo usuário.
+2. Informe nome, login e senha inicial. O login tem 3–32 caracteres: letras, números, ponto, hífen e sublinhado; é normalizado para minúsculas. A senha tem 12–128 caracteres.
+3. Marque as pastas permitidas pela árvore. Uma pasta inclui todos os descendentes; não há exclusão de uma subpasta dentro de uma concessão maior. Nenhuma seleção significa nenhum acesso.
+4. Mantenha a conta ativa. Marque Permitir download somente se o conteúdo dessas pastas puder ser recebido pela pessoa.
+5. Salve e forneça as credenciais por um canal privado.
 
-Qualquer alteração encerra as sessões anteriores e interrompe downloads ativos. Desativar impede novos logins. Reativar não restaura sessões antigas. O login administrativo principal é criado a partir do .env e não pode ser removido pelo painel e não é possível promover contas comuns a administrador. Não existe autocadastro.
+Concessões precisam estar dentro das raízes globais do .env. Há limite de 200 contas comuns e 20 pastas por conta. A interface não oferece autocadastro ou exclusão permanente; permite edição e desativação.
 
-## Dados locais e proteção
+## Editar e redefinir senha
 
-A base fica em data/users.json, com hashes scrypt e salt aleatório, gravada por substituição atômica. A interface recebe apenas dados de cadastro e concessões, nunca hashes. Há limite de 200 usuários e 20 pastas por conta. Concessões só podem estar dentro das raízes globais configuradas no .env.
+Abra uma conta no painel. É possível mudar nome, login, pastas, download e estado ativo. Deixe a senha vazia para mantê-la; preencha para redefinir sem conhecer a anterior. Senhas existentes não são recuperadas nem exibidas.
 
-Preserve data/ em atualizações e backups privados. Proteja a instalação, o .env, a base, certificados e backups com permissões NTFS restritas ao administrador e à conta que executa o processo. Base inválida ou sem leitura impede inicializar; restaure o backup, não apague a base para contornar o erro.
+Qualquer alteração invalida as sessões da conta e interrompe downloads ativos. Desativar impede novos logins; reativar exige novo login.
 
-Mudanças nas raízes globais são aplicadas no próximo reinício, e concessões fora delas deixam de valer. Sessões são descartadas em cada reinício e expiram em 30 minutos.
+## Trocar a própria senha
 
-## O que cada conta pode fazer
+O botão Trocar minha senha está disponível para admin e colaboradores. Exige senha atual, nova e confirmação. Ao salvar, todas as sessões da conta são encerradas. A troca administrativa persiste um hash em data/users.json que passa a prevalecer sobre o hash inicial do .env. Preserve ambos nos backups; apagar a base não é um método de recuperação.
 
-- Árvore, raízes, busca e totais são limitados às pastas concedidas. Contas sem pastas recebem zero resultados sem consultar o índice.
-- Navegação para pastas fora do escopo é recusada no backend, mesmo com alteração manual da URL.
-- Uma página com resultados fora do escopo é descartada integralmente, inclusive seu total.
-- Download exige autorização global e individual, ID da própria sessão, pasta permitida e leitura pela conta Windows do processo. A autorização é revalidada após abrir o arquivo e em todo download.
-- IDs de outra conta/sessão não funcionam. Apenas arquivos regulares; links simbólicos/junctions verificados são recusados.
-- Alterações durante uma busca impedem devolver a resposta antiga. Revogar uma conta também interrompe downloads em andamento.
+## O que o usuário vê
 
-## Limites do modelo aprovado
+Árvore, resultados, raízes e totais são restritos às concessões pelo backend. Uma conta sem pastas não consulta o índice. Navegar ou alterar a URL não autoriza novas pastas. As pesquisas usam nomes/caminhos e metadados, não o conteúdo dos documentos.
 
-As concessões do painel autorizam pesquisa e, quando marcada, leitura do conteúdo. Não representam identidade Windows e não reproduzem ACLs NTFS/SMB individuais. O backend lê com a conta Windows que executa o Nexus depois de conferir a concessão da conta Nexus. Conceda somente conteúdo que a pessoa pode receber.
+Modificado de e Até limitam a última modificação registrada no Everything, com início/fim opcionais. Os dois dias são incluídos inteiros no horário do host. O filtro não interpreta datas escritas dentro do arquivo ou no seu nome. Não usa a data de criação. Limpar filtros mantém a pasta atual.
 
-O painel não altera permissões dos compartilhamentos Windows: acesso direto pelo Explorador continua seguindo a configuração atual do servidor. As raízes e seus ancestrais precisam ser administrados por pessoas confiáveis. Não há isolamento contra administrador local malicioso ou substituições concorrentes de diretórios por quem controla o filesystem. Verificar links pelo cliente SMB não substitui o controle do servidor de arquivos.
+Ao selecionar uma pasta sem texto, categoria/extensão ou período, a lista mostra seu conteúdo direto. Aplicar um desses filtros inclui subpastas. A extensão digitada tem prioridade sobre a categoria. A árvore permanece navegável independentemente do período.
 
-A versão usa cookies HttpOnly/SameSite=Strict e Secure no HTTPS, validação de Host e origem, bloqueio de cabeçalhos de proxy, limites de login por IP/conta, 3 buscas simultâneas, timeout upstream de 8 segundos e resposta de até 2 MB. Não registra pesquisas/caminhos nem envia conteúdo a IA.
+## Downloads e originais
 
-## Trocar sua própria senha
+Download depende de NEXUS_DOWNLOADS=true no .env e permissão individual; admin tem permissão individual, mas também depende da opção global. O botão Verificar download confirma a leitura e disponibiliza a ação; o servidor revalida ao transferir. Não há acesso irrestrito por URL ou download via Everything.
 
-Use o botão Trocar minha senha no topo da página. Informe a senha atual, a nova senha de 12 a 128 caracteres e sua confirmação. Essa opção funciona para admin e contas comuns. Ao salvar, todas as sessões da conta são encerradas; entre novamente com a nova senha.
+Abrir no Windows copia o caminho para colar no Explorador. A abertura depende do acesso Windows da pessoa e do aplicativo associado ao arquivo. Copiar o caminho não concede permissão no servidor.
 
-A senha administrativa alterada fica como hash protegido em data/users.json, substituindo a credencial inicial do .env para os próximos logins. Não edita nem precisa regenerar o .env. Preserve data/ nos backups: apagar a base não é um procedimento de recuperação. Editar outras contas não modifica a senha administrativa.
+## Limites das permissões
 
-O administrador continua podendo redefinir a senha de uma conta comum em Usuários → Editar. A troca própria exige a senha atual e não permite escolher outra conta como alvo.
+Contas Nexus não são contas Windows. O backend lê arquivos com a conta Windows do processo, após conferir a concessão da conta Nexus. O painel não altera ACLs NTFS/SMB; o acesso direto ao compartilhamento permanece conforme a configuração do servidor. Para restringir também esse acesso, administre as permissões do compartilhamento separadamente.
+
+Conceder uma pasta pode revelar nomes e caminhos confidenciais mesmo sem habilitar download. Cadastre somente concessões aprovadas. As sessões expiram após 30 minutos e não sobrevivem ao reinício do processo.
